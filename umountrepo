@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+# unmount cvmfs repositories that were mounted with mountrepo
+# Written by Dave Dykstra 17 April 2019
+#
+
+
+usage()
+{
+    echo "Usage: umountrepo {repo.name|-a}" >&2
+    exit 1
+}
+
+if [ $# != 1 ]; then
+    usage
+fi
+
+HERE="`dirname $0`"
+if [ "$HERE" = "." ]; then
+    HERE=$PWD
+fi
+DIST="$HERE/dist"
+
+if [ "$1" = "-a" ]; then
+    set -- `mount|grep " $DIST"|awk '{print $3}'`
+else
+    set -- $DIST/cvmfs/$1
+fi
+
+for REPO; do
+    echo "Unmounting $REPO"
+    fusermount -u $REPO
+done

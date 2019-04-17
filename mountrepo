@@ -1,0 +1,74 @@
+#!/bin/bash
+#
+# mount cvmfs as unprivileged on a system with fusermount
+# Written by Dave Dykstra 17 April 2019
+#
+
+
+usage()
+{
+    echo "Usage: mountrepo repo.name" >&2
+    exit 1
+}
+
+if [ $# != 1 ]; then
+    usage
+fi
+
+REPO="$1"
+
+HERE="`dirname $0`"
+if [ "$HERE" = "." ]; then
+    HERE=$PWD
+fi
+DIST="$HERE/dist"
+
+if [ ! -f $DIST/usr/bin/cvmfs2 ] || [ ! -f $DIST/etc/cvmfs/default.conf ]; then
+    echo "$DIST should be rpm2cpio of cvmfs + config rpms" >&2
+    exit 1
+fi
+
+DEFLOCAL=$DIST/etc/cvmfs/default.local
+if ! grep -q "^CVMFS_HTTP_PROXY=" $DEFLOCAL 2>/dev/null; then
+    echo "CVMFS_HTTP_PROXY=auto" >>$DEFLOCAL
+    echo "CVMFS_PAC_URLS=http://wlcg-wpad.fnal.gov/wpad.dat;http://wlcg-wpad.cern.ch/wpad.dat" >>$DEFLOCAL
+fi
+if ! grep -q "^CVMFS_NFILES=" $DEFLOCAL 2>/dev/null; then
+    echo "CVMFS_NFILES=1024" >>$DEFLOCAL
+fi
+
+CONFFILE=/tmp/mountrepo.cfg.$$
+#trap "rm -f $CONFFILE" 0
+
+relocate()
+{
+sed -e "s,^\([^/]*\)/cvmfs,\1$DIST/cvmfs," \
+    -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
+    -e "s,^\([^/]*\)/var,\1$DIST/var," $* 2>/dev/null
+}
+
+DOMAIN="`echo "$REPO"|cut -d. -f2-`"
+(
+relocate $DIST/etc/cvmfs/default.conf
+relocate $DIST/etc/cvmfs/default.d/*.conf
+CONFIG_REPO="`sed -n 's/^CVMFS_CONFIG_REPOSITORY=//p' $DIST/etc/cvmfs/default.d/*.conf`"
+if [ "$REPO" != "$CONFIG_REPO" ]; then
+    relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/default.conf
+fi
+relocate $DIST/etc/cvmfs/default.local
+if [ "$REPO" != "$CONFIG_REPO" ]; then
+    relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/domain.d/$DOMAIN.conf
+fi
+relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.conf
+relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.local
+if [ "$REPO" != "$CONFIG_REPO" ]; then
+    relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/config.d/$REPO.conf
+fi
+relocate $DIST/etc/cvmfs/config.d/$REPO.conf
+relocate $DIST/etc/cvmfs/config.d/$REPO.local
+
+) > $CONFFILE
+
+mkdir -p $DIST/var/run/cvmfs
+mkdir -p $DIST/cvmfs/$REPO
+LD_LIBRARY_PATH=$DIST/usr/lib64 $DIST/usr/bin/cvmfs2 -o config=$CONFFILE $REPO $DIST/cvmfs/$REPO

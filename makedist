@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# Create the cvmfs dist directory, downloading the latest rpms from
+#   the three major sources.
+# Written by Dave Dykstra 17 April 2019
+#
+
+usage()
+{
+    echo "Usage: makedist {osg|egi|default}" >&2
+    exit 1
+}
+
+distroversion() {
+    if [ -f /etc/os-release ]; then
+        source /etc/os-release
+        echo "${VERSION_ID/.*/}"
+    elif [ -f /etc/redhat-release ]; then
+        read LINE </etc/redhat-release
+        case "$LINE" in
+            *"release 6"*)
+                echo "6"
+                ;;
+        esac
+    fi
+}
+
+EL="`distroversion`"
+ARCH="`arch`"
+
+case $1 in
+    osg) URL="https://repo.opensciencegrid.org/osg/3.4/el$EL/release/$ARCH";;
+    egi)
+        if [ "$EL" = 6 ]; then
+            OS=sl6
+        else
+            OS=centos$EL
+        fi
+        URL="http://repository.egi.eu/sw/production/umd/4/$OS/$ARCH/updates";;
+    default)
+        URL="http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/$ARCH";;
+    *) usage;;
+esac
+
+LIST="`curl -s $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
+CVMFS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
+CONFIG="`echo "$LIST"|grep "^cvmfs-config-$1-"|tail -1`"
+
+HERE="`dirname $0`"
+if [ "$HERE" = "." ]; then
+    HERE=$PWD
+fi
+DIST="$HERE/dist"
+
+mkdir -p $DIST
+cd $DIST
+echo "Extracting $URL/$CVMFS into $DIST"
+curl -s "$URL/$CVMFS"|rpm2cpio -|cpio -idmv
+echo "Extracting $URL/$CONFIG into $DIST"
+curl -s "$URL/$CONFIG"|rpm2cpio -|cpio -idmv
