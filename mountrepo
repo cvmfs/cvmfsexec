@@ -38,7 +38,7 @@ if ! grep -q "^CVMFS_NFILES=" $DEFLOCAL 2>/dev/null; then
 fi
 
 CONFFILE=/tmp/mountrepo.cfg.$$
-#trap "rm -f $CONFFILE" 0
+trap "rm -f $CONFFILE" 0
 
 relocate()
 {
