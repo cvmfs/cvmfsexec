@@ -34,7 +34,7 @@ if ! grep -q "^CVMFS_HTTP_PROXY=" $DEFLOCAL 2>/dev/null; then
     echo "CVMFS_PAC_URLS=http://wlcg-wpad.fnal.gov/wpad.dat;http://wlcg-wpad.cern.ch/wpad.dat" >>$DEFLOCAL
 fi
 if ! grep -q "^CVMFS_NFILES=" $DEFLOCAL 2>/dev/null; then
-    echo "CVMFS_NFILES=`ulimit -n`" >>$DEFLOCAL
+    echo "CVMFS_NFILES=`ulimit -Hn`" >>$DEFLOCAL
 fi
 
 CONFFILE=/tmp/mountrepo.cfg.$$
