@@ -29,7 +29,13 @@ EL="`distroversion`"
 ARCH="`arch`"
 
 case $1 in
-    osg) URL="https://repo.opensciencegrid.org/osg/3.4/el$EL/release/$ARCH";;
+    osg)
+        if [ "$EL" = 6 ]; then
+            REL=3.4
+        else
+            REL=3.5
+        fi
+        URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/$ARCH";;
     egi)
         if [ "$EL" = 6 ]; then
             OS=sl6

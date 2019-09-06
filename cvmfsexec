@@ -1,0 +1,134 @@
+#!/bin/bash
+# Mount cvmfs repository in a user namespace and change to that space.
+# Requires being able to run fusermount and unshare -rm.
+# Written by Dave Dykstra September 2019
+
+VERSION=1.0
+
+usage()
+{
+    echo "Usage: cvmfsexec [-v] repo ... -- [command]" >&2
+    echo "       -v:   print current version and exit" >&2
+    exit 1
+}
+
+HERE="`dirname $0`"
+if [ "$HERE" = "." ]; then
+    HERE=$PWD
+fi
+
+while getopts "v" OPTION; do
+    case $OPTION in
+        v)  echo "$VERSION"
+            exit
+            ;;
+        ?)  shift $(($OPTIND-2))
+            usage
+            ;;
+    esac
+done
+shift $(($OPTIND-1))
+
+NREPOS=0
+REPOS=""
+for ARG; do
+    if [ "$ARG" == "--" ]; then
+        break
+    fi
+    REPOS="$REPOS $ARG"
+    let NREPOS+=1
+done
+
+if [ "$ARG" != "--" ]; then
+    usage
+fi
+
+shift $(($NREPOS+1))
+
+ORGPWD=$PWD
+cd $HERE
+
+# mount the repos
+MOUNTEDREPOS=""
+for REPO in $REPOS; do
+    if ./mountrepo $REPO; then
+        MOUNTEDREPOS="$MOUNTREPOS $REPO"
+    else
+        RET="$?"
+        for REPO in $MOUNTEDREPOS; do
+            ./umountrepo $REPO
+        done
+        exit $RET
+    fi
+done
+
+TMPDIR=$(mktemp -d)
+trap "rm -rf $TMPDIR" 0
+P1=$TMPDIR/p1
+P2=$TMPDIR/p2
+P3=$TMPDIR/p3
+mkfifo $P1 $P2 $P3
+
+( # do lazy unmounts after binds are finished
+read X < $P1
+rm -f $P1
+for REPO in $REPOS; do
+    ./umountrepo -z $REPO >/dev/null
+done
+) &
+
+cd $ORGPWD
+
+rm -rf $HERE/mnt
+MOUNTS="$(mount|awk '{print $3}')"
+
+exec unshare -rm $SHELL 3<&0 <<!EOF-1!
+    trap "rm -rf $TMPDIR" 0  # exec eliminated the previously set trap
+    mkdir -p $HERE/mnt
+    mount --rbind $HERE/mnt $HERE/mnt # pivot_root requires this mountpoint
+    mkdir -p $HERE/mnt/cvmfs
+    mount --rbind $HERE/dist/cvmfs $HERE/mnt/cvmfs
+    echo ok >$P1
+    ( # set up uid/gid map after subprocesss is started
+    read PID <$P2
+    rm -f $P2
+    echo "\$(awk '{print \$2; exit}' /proc/self/gid_map) 0 1" >/proc/\$PID/gid_map
+    echo "\$(awk '{print \$2; exit}' /proc/self/uid_map) 0 1" >/proc/\$PID/uid_map
+
+    echo done >$P3
+    ) &
+
+    # implement "underlay" for all but /cvmfs
+    for ROOTFILE in /.??* /*; do
+        if [ "\$ROOTFILE" == "/.??*" ] || [ "\$ROOTFILE" == "/cvmfs" ]; then
+            continue
+        fi
+        TARG=$HERE/mnt/\$ROOTFILE
+        if [ -L \$ROOTFILE ]; then
+            ln -s \$(readlink -f \$ROOTFILE) \$TARG
+        elif [ -d \$ROOTFILE ]; then
+            mkdir -p \$TARG
+            if echo "$MOUNTS"|grep -q "^\$ROOTFILE"; then
+                mount --rbind \$ROOTFILE \$TARG
+            else
+                mount --bind \$ROOTFILE \$TARG
+            fi
+        else
+            touch \$TARG
+            mount --bind \$ROOTFILE \$TARG
+        fi
+    done
+
+    cd $HERE/mnt
+    mkdir -p .old-root
+    pivot_root . .old-root
+    cd $ORGPWD
+    exec unshare -U $SHELL <<!EOF-2!
+        trap "rm -rf $TMPDIR" 0  # exec eliminated the previously set trap
+        echo \\$$ >$P2
+        read X <$P3
+        rm -rf $TMPDIR
+        exec ${@:-$SHELL} <&3 3<&-
+!EOF-2!
+
+!EOF-1!

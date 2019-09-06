@@ -7,9 +7,15 @@
 
 usage()
 {
-    echo "Usage: umountrepo {repo.name|-a}" >&2
+    echo "Usage: umountrepo [-z] {repo.name|-a}" >&2
     exit 1
 }
+
+LAZY=false
+if [ "$1" = "-z" ]; then
+    LAZY=true
+    shift
+fi
 
 if [ $# != 1 ]; then
     usage
@@ -28,6 +34,11 @@ else
 fi
 
 for REPO; do
-    echo "Unmounting $REPO"
-    fusermount -u $REPO
+    if $LAZY; then
+        echo "Lazily unmounting $REPO"
+        fusermount -uz $REPO
+    else
+        echo "Unmounting $REPO"
+        fusermount -u $REPO
+    fi
 done
