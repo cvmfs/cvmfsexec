@@ -82,7 +82,7 @@ cd $ORGPWD
 rm -rf $HERE/mnt
 MOUNTS="$(mount|awk '{print $3}')"
 
-exec unshare -rm $SHELL 3<&0 <<!EOF-1!
+exec unshare -rm $SHELL /dev/stdin "${@:-$SHELL}" 3<&0 <<!EOF-1!
     trap "rm -rf $TMPDIR" 0  # exec eliminated the previously set trap
     mkdir -p $HERE/mnt
     mount --rbind $HERE/mnt $HERE/mnt # pivot_root requires this mountpoint
@@ -123,12 +123,15 @@ exec unshare -rm $SHELL 3<&0 <<!EOF-1!
     mkdir -p .old-root
     pivot_root . .old-root
     cd $ORGPWD
-    exec unshare -U $SHELL <<!EOF-2!
+
+    # quoting the here document's delimeter makes this nested shell not
+    #  interpret $ substitutions, but the previous one still does
+    exec unshare -U $SHELL /dev/stdin "\$@" <<'!EOF-2!'
         trap "rm -rf $TMPDIR" 0  # exec eliminated the previously set trap
-        echo \\$$ >$P2
+        echo \$$ >$P2
         read X <$P3
         rm -rf $TMPDIR
-        exec ${@:-$SHELL} <&3 3<&-
+        exec "\$@" <&3 3<&-
 !EOF-2!
 
 !EOF-1!
