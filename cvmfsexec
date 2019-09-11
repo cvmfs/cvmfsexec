@@ -64,6 +64,7 @@ if [ -n "$CVMFSEXEC_CMDFD" ] && [ -n "$CVMFSEXEC_WAITFIFO" ]; then
     # "Parent" is in quotes because the linux process tree gets reversed and
     #   it is actually a linux child.  It is a parent environment-wise though.
     (
+    echo CD $PWD
     echo REEXEC $#
     for ARG; do
         echo "$ARG"
@@ -79,7 +80,6 @@ HERE="`dirname $0`"
 if [ "$HERE" = "." ]; then
     HERE=$PWD
 fi
-ORIGPWD=$PWD
 
 MOUNTS="$(mount|awk '{print $3}')"
 
@@ -102,6 +102,7 @@ doexec()
     parserepos "$@"
     shift $NSHIFT
 
+    ORIGPWD=$PWD
     cd $HERE
 
     # Add the config repo if not already asked for
@@ -133,7 +134,10 @@ doexec()
     trap "" 1 2 3 15  # ignore ordinary signals
     # read from user namespace process and write to fakeroot process
     while read -u $CMDINFD CMD PARAM; do
-        if [ "$CMD" != REEXEC ]; then
+        if [ "$CMD" == CD ]; then
+            cd "$PARAM"
+            continue
+        elif [ "$CMD" != REEXEC ]; then
             continue
         fi
         N=$PARAM
