@@ -15,7 +15,6 @@ usage()
 }
 
 export CVMFSEXEC_REPOS
-REPOS=""
 parserepos()
 {
     if [ "$1" != "--" ]; then
@@ -32,6 +31,7 @@ parserepos()
         shift $(($OPTIND-1))
     fi
 
+    REPOS=""
     NSHIFT=0
     for ARG; do
         if [ "$ARG" == "--" ]; then
@@ -52,11 +52,11 @@ parserepos()
 
 if [ -n "$CVMFSEXEC_CMDFD" ] && [ -n "$CVMFSEXEC_WAITFIFO" ]; then
     parserepos "$@"
-    shift $NSHIFT
 
     if [ -z "$REPOS" ]; then
         # No new repositories, just directly exec the command.
         # This avoids adding an extra process in the process tree.
+        shift $NSHIFT
         exec "${@:-$SHELL}"
     fi
 
@@ -107,7 +107,8 @@ doexec()
 
     # Add the config repo if not already asked for
     CONFIG_REPO="`grep '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
-    if [[ " $REPOS " != *" $CONFIG_REPO "* ]]; then
+    if [[ " $REPOS " != *" $CONFIG_REPO "* ]] &&
+            [[ " $CVMFSEXEC_REPOS " != *" $CONFIG_REPO "* ]]; then
         REPOS="$CONFIG_REPO $REPOS"
     fi
 
