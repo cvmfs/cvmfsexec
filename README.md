@@ -22,6 +22,14 @@ mounted at "/cvmfs" and automatically unmounted upon exit, use
 "cvmfsexec repository.name ... -- [command]" where the default command
 is $SHELL.
 
+Inside the command you can mount additional repositories by using
+$CVMFSEXEC instead of just "cvmfsexec".  That variable does "exec" on a
+complete path to cvmfsexec.  Since the mounts have to happen outside the
+user namespace, it actually sends a message to the other process to
+mount and execute the command, and makes the current process wait until
+completion.  Each invocation that adds a repository to mount adds an
+additional process in the process tree.
+
 When not using cvmfsexec, use "mountrepo repository.name" to mount a
 repository.  Note that the osg configuration requires
 "config-osg.opensciencegrid.org" to be mounted first, and the egi
