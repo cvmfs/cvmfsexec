@@ -104,6 +104,12 @@ doexec()
 
     cd $HERE
 
+    # Add the config repo if not already asked for
+    CONFIG_REPO="`grep '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
+    if [[ " $REPOS " != *" $CONFIG_REPO "* ]]; then
+        REPOS="$CONFIG_REPO $REPOS"
+    fi
+
     # mount the repos
     for REPO in $REPOS; do
         if ./mountrepo $REPO; then
