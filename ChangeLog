@@ -2,6 +2,7 @@
 - Enable adding additional mounted repositories by invoking $CVMFSEXEC.
 - Don't attempt to mount repositories that are already mounted.
 - Always mount the config repository first.
+- Enable cvmfs debug option when CVMFS_DEBUGLOG is set.
 
 cvmfsexec-1.0 - 6 September 2019
 - Initial release.
