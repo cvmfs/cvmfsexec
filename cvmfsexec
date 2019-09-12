@@ -115,7 +115,9 @@ doexec()
     # mount the repos
     for REPO in $REPOS; do
         if ./mountrepo $REPO; then
-            CVMFSEXEC_REPOS="$CVMFSEXEC_REPOS $REPO"
+            # put new one at the beginning so config repo will
+            #   be unmounted last
+            CVMFSEXEC_REPOS="$REPO $CVMFSEXEC_REPOS"
         else
             RET="$?"
             for REPO in $CVMFSEXEC_REPOS; do
