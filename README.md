@@ -20,15 +20,19 @@ to 4000 MB.
 To execute a command in an environment where cvmfs repositories are
 mounted at "/cvmfs" and automatically unmounted upon exit, use
 "cvmfsexec repository.name ... -- [command]" where the default command
-is $SHELL.
+is $SHELL.  It will automatically mount the configuration repository
+if one is defined. 
 
 Inside the command you can mount additional repositories by using
 $CVMFSEXEC instead of just "cvmfsexec".  That variable does "exec" on a
 complete path to cvmfsexec.  Since the mounts have to happen outside the
 user namespace, it actually sends a message to the other process to
 mount and execute the command, and makes the current process wait until
-completion.  Each invocation that adds a repository to mount adds an
-additional process in the process tree.
+completion.  Repositories that are already mounted are ignored.  Each
+invocation that adds at least one repository to mount adds an additional
+process in the process tree.  
+
+## mountrepo/umountrepo without cvmfsexec
 
 When not using cvmfsexec, use "mountrepo repository.name" to mount a
 repository.  Note that the osg configuration requires
