@@ -5,7 +5,7 @@
 #   executing with $CVMFSEXEC.
 # Written by Dave Dykstra September 2019
 
-VERSION=1.0
+VERSION=1.1
 
 usage()
 {

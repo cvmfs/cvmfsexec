@@ -1,3 +1,4 @@
+cvmfsexec-1.1 - 12 September 2019
 - Preserve whitespace in parameters.
 - Enable adding additional mounted repositories by invoking $CVMFSEXEC.
 - Don't attempt to mount repositories that are already mounted.
