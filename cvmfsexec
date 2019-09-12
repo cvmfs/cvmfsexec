@@ -160,6 +160,10 @@ doexec()
     # do unmounts and cleanup after user command exits
     cd $HERE
     for REPO in $CVMFSEXEC_REPOS; do
+        if [ "$REPO" == "$CONFIG_REPO" ]; then
+            # give a little extra time for the others to exit
+            sleep 1
+        fi
         ./umountrepo $REPO >/dev/null
     done
     rm -rf $TMPDIR
