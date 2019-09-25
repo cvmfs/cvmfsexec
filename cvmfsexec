@@ -81,8 +81,6 @@ if [ "$HERE" = "." ]; then
     HERE=$PWD
 fi
 
-MOUNTS="$(mount|awk '{print $3}')"
-
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" 0
 CMDFIFO1=$TMPDIR/cmd1
@@ -206,11 +204,7 @@ doexec()
                 ln -s \$(readlink -f \$ROOTFILE) \$TARG
             elif [ -d \$ROOTFILE ]; then
                 mkdir -p \$TARG
-                if echo "$MOUNTS"|grep -q "^\$ROOTFILE"; then
-                    mount --rbind \$ROOTFILE \$TARG
-                else
-                    mount --bind \$ROOTFILE \$TARG
-                fi
+                mount --rbind \$ROOTFILE \$TARG
             else
                 touch \$TARG
                 mount --bind \$ROOTFILE \$TARG
