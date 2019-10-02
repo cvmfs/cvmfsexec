@@ -1,6 +1,9 @@
 #!/bin/bash
 #
-# mount cvmfs as unprivileged on a system with fusermount
+# Mount a cvmfs repository as an unprivileged user.
+# Works with fusermount or with a kernel (>= 4.18) that supports mounting
+#   fuse repositories in unprivileged "fakeroot" namespaces.
+# Mounts in cvmfs subdirectory of the directory where the command is found.
 # Written by Dave Dykstra 17 April 2019
 #
 
