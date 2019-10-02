@@ -14,6 +14,11 @@ usage()
     exit 1
 }
 
+HERE="`dirname $0`"
+if [ "$HERE" = "." ]; then
+    HERE=$PWD
+fi
+
 export CVMFSEXEC_REPOS
 parserepos()
 {
@@ -47,10 +52,19 @@ parserepos()
         usage
     fi
 
+    # Add the config repo if not already asked for
+    CONFIG_REPO="`grep '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
+    if [[ " $REPOS " != *" $CONFIG_REPO "* ]] &&
+            [[ " $CVMFSEXEC_REPOS " != *" $CONFIG_REPO "* ]]; then
+        REPOS="$CONFIG_REPO $REPOS"
+    fi
+
     let NSHIFT+=1
 }
 
 if [ -n "$CVMFSEXEC_CMDFD" ] && [ -n "$CVMFSEXEC_WAITFIFO" ]; then
+    # this is within cvmfsexec, requesting to mount more repo(s)
+
     parserepos "$@"
 
     if [ -z "$REPOS" ]; then
@@ -70,133 +84,150 @@ if [ -n "$CVMFSEXEC_CMDFD" ] && [ -n "$CVMFSEXEC_WAITFIFO" ]; then
         echo "$ARG"
     done
     )>&$CVMFSEXEC_CMDFD
+    exec {CVMFSEXEC_CMDFD}>&- # close it, no longer needed
     trap "" 1 2 3 15  # ignore ordinary signals
     # wait until that process exits
     read X <$CVMFSEXEC_WAITFIFO
     exit 0
 fi
 
-HERE="`dirname $0`"
-if [ "$HERE" = "." ]; then
-    HERE=$PWD
+KERNEL_VERSION="$(uname -r)"
+MAJORKERN=${KERNEL_VERSION/.*/}
+RESTKERN=${KERNEL_VERSION#$MAJORKERN.}
+MINORKERN=${RESTKERN/.*/}
+USERFUSE=false
+if [ "$MAJORKERN" -gt 4 ] || [ "$MAJORKERN" -eq 4 -a "$MINORKERN" -ge 18 ]; then
+    USERFUSE=true
 fi
 
 TMPDIR=$(mktemp -d)
-trap "rm -rf $TMPDIR" 0
+trap "rm -rf $TMPDIR" 0  # note that trap does not carry past exec
 CMDFIFO1=$TMPDIR/cmd1
 WAITFIFO1=$TMPDIR/wait1
 CMDFIFO2=$TMPDIR/cmd2
 WAITFIFO2=$TMPDIR/wait2
+FUNCS=$TMPDIR/funcs
 
 # hold this pipe open until we exit, for child cvmfsexec processes to wait on
 mkfifo $WAITFIFO1
 #to allow the pipe open-write to proceed, first open it in a throw-away process
 (<$WAITFIFO1) &
-exec {WAITFD}>$WAITFIFO1
+if ! $USERFUSE; then
+    exec {WAITFD}>$WAITFIFO1
+fi
+export WAITFD
 export CVMFSEXEC_WAITFIFO=$WAITFIFO1
 
+procreexec()
+{
+    if [ "$1" == CD ]; then
+        cd "$2"
+        ORIGPWD="$2"
+        return
+    elif [ "$1" != REEXEC ]; then
+        return
+    fi
+    N="$2"
+    # read the $N parameters into an array
+    PARAMS=()
+    while [ $N -gt 0 ]; do
+        read -u $CMDINFD LINE
+        PARAMS+=("$LINE")
+        let N-=1
+    done
+    trap 1 2 3 15 # restore ordinary signals
+    # start a new subprocess and turn this process into the
+    #  new user command
+    if $USERFUSE; then
+        doexec2 "${PARAMS[@]}" {CMDINFD}<&-
+    else
+        doexec "${PARAMS[@]}" {CMDINFD}<&-
+    fi
+    exit $?
+}
+
+# Do everything else in a function so it can recurse when asked to mount
+#   more repositories while not in $USERFUSE mode.
 doexec()
 {
-    parserepos "$@"
-    shift $NSHIFT
+    # recreate the command fifo in case nesting
+    rm -f $CMDFIFO1
+    mkfifo $CMDFIFO1
+
+    # make a copy of stdin fd, for use in '&' and by unshare
+    exec {STDINCOPYFD}<&0
 
     ORIGPWD=$PWD
-    cd $HERE
 
-    # Add the config repo if not already asked for
-    CONFIG_REPO="`grep '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
-    if [[ " $REPOS " != *" $CONFIG_REPO "* ]] &&
-            [[ " $CVMFSEXEC_REPOS " != *" $CONFIG_REPO "* ]]; then
-        REPOS="$CONFIG_REPO $REPOS"
-    fi
+    if $USERFUSE; then
+        # use a separate PID namespace to clean up fuse processes
+        UNSHAREOPTS="-pf"
+        # the fakeroot process will process mount requests
+        CMDFIFO2=$CMDFIFO1
+    else
+        # mount the repositories as the unprivileged user in the 
+        #  shared system namespace.
 
-    # mount the repos
-    for REPO in $REPOS; do
-        if ./mountrepo $REPO; then
-            # put new one at the beginning so config repo will
-            #   be unmounted last
-            CVMFSEXEC_REPOS="$REPO $CVMFSEXEC_REPOS"
-        else
-            RET="$?"
-            for REPO in $CVMFSEXEC_REPOS; do
-                ./umountrepo $REPO
-            done
-            exit $RET
-        fi
-    done {WAITFD}>&-
+        parserepos "$@"
+        shift $NSHIFT
 
-    cd $ORIGPWD
+        # mount the repos, keeping track of them for cleanup
+        cd $HERE
+        for REPO in $REPOS; do
+            if ./mountrepo $REPO; then
+                # put new one at the beginning so config repo will
+                #   be unmounted last
+                CVMFSEXEC_REPOS="$REPO $CVMFSEXEC_REPOS"
+            else
+                RET="$?"
+                for REPO in $CVMFSEXEC_REPOS; do
+                    ./umountrepo $REPO
+                done
+                exit $RET
+            fi
+        done {WAITFD}>&-
+        cd $ORIGPWD
 
-    rm -f $CMDFIFO1 $CMDFIFO2 $WAITFIFO2
-    mkfifo $CMDFIFO1 $CMDFIFO2 $WAITFIFO2
-    # make a copy of stdin fd, for use in '&' and by unshare later
-    exec {STDINCOPYFD}<&0
-    (
-    trap "" 1 2 3 15  # ignore ordinary signals
-    # read from user namespace process and write to fakeroot process
-    while read -u $CMDINFD CMD PARAM; do
-        if [ "$CMD" == CD ]; then
-            cd "$PARAM"
-            continue
-        elif [ "$CMD" != REEXEC ]; then
-            continue
-        fi
-        N=$PARAM
-        # read the $N parameters into an array
-        PARAMS=()
-        while [ $N -gt 0 ]; do
-            read -u $CMDINFD LINE
-            PARAMS+=("$LINE")
-            let N-=1
+        UNSHAREOPTS=""
+        (
+        # this is background process for accepting REEXEC from children
+        trap "" 1 2 3 15  # ignore ordinary signals
+        # read from user namespace process and write to fakeroot process
+        while read -u $CMDINFD CMD PARAM; do
+            procreexec "$CMD" "$PARAM"
+        done <&$STDINCOPYFD {STDINCOPYFD}<&- {CMDINFD}<$CMDFIFO1
+        # do unmounts and cleanup after user command exits
+        cd $HERE
+        for REPO in $CVMFSEXEC_REPOS; do
+            if [ "$REPO" == "$CONFIG_REPO" ]; then
+                # give a little extra time for the others to exit
+                sleep 1
+            fi
+            ./umountrepo $REPO >/dev/null
         done
-        trap 1 2 3 15 # restore ordinary signals
-        # start a new subprocess and turn this process into the
-        #  new user command
-        doexec "${PARAMS[@]}" {CMDINFD}<&-
-        exit $?
-    done <&$STDINCOPYFD {STDINCOPYFD}<&- {CMDINFD}<$CMDFIFO1
-    # do unmounts and cleanup after user command exits
-    cd $HERE
-    for REPO in $CVMFSEXEC_REPOS; do
-        if [ "$REPO" == "$CONFIG_REPO" ]; then
-            # give a little extra time for the others to exit
-            sleep 1
-        fi
-        ./umountrepo $REPO >/dev/null
-    done
-    rm -rf $TMPDIR
-    ) &
-
-    # close the waitfd, leaving it only for the background process
-    exec {WAITFD}>&-
+        rm -rf $TMPDIR
+        ) &
+        # close the waitfd, leaving it only for the background process
+        exec {WAITFD}>&-
+    fi
 
     rm -rf $HERE/mnt
 
     export STDINCOPYFD
 
     # Note that within the here document, unprotected $ substitutions are
-    #  done by the surrounding shell, and \$ is within the command
-    exec unshare -rm $SHELL /dev/stdin "${@:-$SHELL}" <<!EOF-1!
+    #  done by the surrounding shell, and \$ is within the unshare shell
+    exec unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
+        # now in the "fakeroot" namespace
+        trap "rm -rf $TMPDIR" 0 # note that this does not carry through "exec"
+
         mkdir -p $HERE/mnt
         mount --rbind $HERE/mnt $HERE/mnt # pivot_root requires this mountpoint
         mkdir -p $HERE/mnt/cvmfs
-        mount --rbind $HERE/dist/cvmfs $HERE/mnt/cvmfs # add any pre-mounts
-        ( 
-        trap "" 1 2 3 15  # ignore ordinary signals
-        while read CMD PARAM; do
-            if [ "\$CMD" != PID ]; then
-                continue
-            fi
-            # set up uid/gid map
-            echo "\$(awk '{print \$2; exit}' /proc/self/gid_map) 0 1" >/proc/"\$PARAM"/gid_map
-            echo "\$(awk '{print \$2; exit}' /proc/self/uid_map) 0 1" >/proc/"\$PARAM"/uid_map
-            echo "ready" >$WAITFIFO2
-        done <$CMDFIFO2
-        ) &
 
         # implement "underlay" for all but /cvmfs
         for ROOTFILE in /.??* /*; do
-            if [ "\$ROOTFILE" == "/.??*" ] || [ "\$ROOTFILE" == "/cvmfs" ]; then
+            if [ "\$ROOTFILE" == "/.??*" ] || [ "\$ROOTFILE" = "/cvmfs" ]; then
                 continue
             fi
             TARG=$HERE/mnt/\$ROOTFILE
@@ -211,25 +242,121 @@ doexec()
             fi
         done
 
-        cd $HERE/mnt
-        mkdir -p .old-root
-        pivot_root . .old-root
-        cd $ORIGPWD
+        if $USERFUSE; then
+            # this is done here instead of earlier to prevent it from
+            #  being held open by the parent unshare's forked process
+            exec {WAITFD}>$WAITFIFO1
+        fi
+        FIRSTTIME=true
 
-        export CVMFSEXEC_CMDFD
+        # Do the rest of the work in a function so it can recurse when
+        #   asked to mount more repositories while in $USERFUSE mode.
+        doexec2()
+        {
+            # recreate the command & wait fifos in case nesting
+            rm -f $CMDFIFO2 $WAITFIFO2
+            mkfifo $CMDFIFO2 $WAITFIFO2
 
-        # quoting the here document's delimeter makes this nested shell not
-        #  interpret $ substitutions, but the previous one still does
-        exec unshare -U $SHELL /dev/stdin "\$@" {CVMFSEXEC_CMDFD}>$CMDFIFO1 <<'!EOF-2!'
-            echo "PID \$$" >$CMDFIFO2
-            read X <$WAITFIFO2
-            export -n STDINCOPYFD
-            export CVMFSEXEC="exec $HERE/cvmfsexec"
-            exec "\$@" <&\$STDINCOPYFD {STDINCOPYFD}<&-
+            if $USERFUSE; then
+                # Import needed functions into this shell
+                HERE=$HERE  # copy a var the functions need into this shell
+                . $FUNCS
+                # do this before starting the background process, because
+                #  it needs the updated value of CVMFSEXEC_REPOS
+                parserepos "\$@"
+                shift \$NSHIFT
+                CVMFSEXEC_REPOS="\$CVMFSEXEC_REPOS \$REPOS"
+            fi
+
+            ( 
+            # this is background process for accepting commands from children
+            if $USERFUSE && \$FIRSTTIME; then
+                FIRSTTIME=false
+            fi
+            trap "" 1 2 3 15  # ignore ordinary signals
+            while read -u \$CMDINFD CMD PARAM; do
+                if [ "\$CMD" == PID ]; then
+                        # set up uid/gid map
+                        echo "\$(awk '{print \$2; exit}' /proc/self/gid_map) 0 1" >/proc/"\$PARAM"/gid_map
+                        echo "\$(awk '{print \$2; exit}' /proc/self/uid_map) 0 1" >/proc/"\$PARAM"/uid_map
+                        echo "ready" >$WAITFIFO2
+                elif $USERFUSE; then
+                    procreexec "\$CMD" "\$PARAM"
+                fi
+            done <&$STDINCOPYFD {CMDINFD}<$CMDFIFO2
+            ) &
+            
+            if $USERFUSE; then
+                # close the waitfd, leaving it only for the background process
+                exec {WAITFD}>&-
+
+                # mount the repos
+                for REPO in \$REPOS; do
+                    if ! ./mountrepo \$REPO; then
+                        exit $?
+                    fi
+
+                    if \$FIRSTTIME; then
+                        mkdir -p $HERE/mnt/cvmfs/\$REPO
+                        mount --bind $HERE/dist/cvmfs/\$REPO $HERE/mnt/cvmfs/\$REPO
+                    else
+                        mkdir -p /cvmfs/\$REPO
+                        mount --bind $HERE/dist/cvmfs/\$REPO /cvmfs/\$REPO
+                    fi
+                done
+            else
+                # map cvmfs repos mounted by parent
+                mount --rbind $HERE/dist/cvmfs $HERE/mnt/cvmfs
+            fi
+
+            if \$FIRSTTIME; then
+                cd $HERE/mnt
+                mkdir -p .old-root
+                pivot_root . .old-root
+                cd $ORIGPWD
+                if $USERFUSE; then
+                    # mount a new /proc for the new pid space
+                    mount -t proc proc /proc
+                fi
+            fi
+
+            export CVMFSEXEC_CMDFD
+
+            # quoting the here document's delimeter makes this nested shell not
+            #  interpret $ substitutions, but the previous one still does
+            exec unshare -U /bin/bash /dev/stdin "\${@:-$SHELL}" {CVMFSEXEC_CMDFD}>$CMDFIFO1 <<'!EOF-2!'
+                # now in the user namespace
+
+                export -n STDINCOPYFD
+                export CVMFSEXEC="exec $HERE/cvmfsexec"
+                if [ "$CMDFIFO1" == "$CMDFIFO2" ]; then
+                    echo "PID \$$" >&\$CVMFSEXEC_CMDFD
+                else
+                    echo "PID \$$" >$CMDFIFO2
+                fi
+                read X <$WAITFIFO2
+
+                if [ \$$ -eq 1 ]; then
+                    # Leave this bash running as PID 1, because most other
+                    #  programs won't handle signals & child reaping correctly,
+                    #  and also for the cleanup trap because all other
+                    #  processes in the namespaces will get a SIGKILL when
+                    #  pid 1 exits.
+                    EXEC=""
+                    trap "rm -rf $TMPDIR" 0
+                    trap "" 1 2 3 15  # ignore all ordinary signals
+                else
+                    EXEC=exec
+                fi
+                $EXEC "\$@" <&\$STDINCOPYFD {STDINCOPYFD}<&-
 !EOF-2!
+        }
 
+        doexec2 "\$@"
 !EOF-1!
 }
 
-trap 0 # delegate cleanup of the TMPDIR to the watchdog
+# these functions are needed from within unshare so write them to a file
+declare -f parserepos doexec procreexec >$FUNCS
+
 doexec "$@"
