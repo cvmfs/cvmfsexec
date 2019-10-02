@@ -51,6 +51,7 @@ esac
 LIST="`curl -s $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 CVMFS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 CONFIG="`echo "$LIST"|grep "^cvmfs-config-$1-"|tail -1`"
+HELPER="`echo "$LIST"|grep "^cvmfs-x509-helper"|tail -1`"
 
 HERE="`dirname $0`"
 if [ "$HERE" = "." ]; then
@@ -60,7 +61,7 @@ DIST="$HERE/dist"
 
 mkdir -p $DIST
 cd $DIST
-echo "Extracting $URL/$CVMFS into $DIST"
-curl -s "$URL/$CVMFS"|rpm2cpio -|cpio -idmv
-echo "Extracting $URL/$CONFIG into $DIST"
-curl -s "$URL/$CONFIG"|rpm2cpio -|cpio -idmv
+for PKG in $CVMFS $CONFIG $HELPER; do
+    echo "Extracting $URL/$PKG into $DIST"
+    curl -s "$URL/$PKG"|rpm2cpio -|cpio -idmv
+done
