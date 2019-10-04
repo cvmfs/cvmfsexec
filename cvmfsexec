@@ -278,7 +278,26 @@ doexec()
                         echo "\$(awk '{print \$2; exit}' /proc/self/uid_map) 0 1" >/proc/"\$PARAM"/uid_map
                         echo "ready" >$WAITFIFO2
                 elif $USERFUSE; then
-                    procreexec "\$CMD" "\$PARAM"
+                    if [ "\$CMD" == MOUNTREPO ]; then
+                        RET=0
+                        REPO="\$PARAM"
+                        if [[ " \$CVMFSEXEC_REPOS " != *" \$REPO "* ]]; then
+                            # not already mounted
+                            CVMFSEXEC_REPOS="\$CVMFSEXEC_REPOS \$REPO"
+                            cd "$HERE"
+                            ./mountrepo "\$REPO"
+                            RET="\$?"
+                            if [ $? == 0 ]; then
+                                mkdir -p "/cvmfs/\$REPO"
+                                mount --bind "$HERE/dist/cvmfs/\$REPO" "/cvmfs/\$REPO"
+                                RET="\$"
+                            fi
+                            cd - >/dev/null
+                        fi
+                        echo $RET >$CVMFSEXEC_WAITFIFO
+                    else
+                        procreexec "\$CMD" "\$PARAM"
+                    fi
                 fi
             done <&$STDINCOPYFD {CMDINFD}<$CMDFIFO2
             ) &
@@ -302,7 +321,7 @@ doexec()
                         mount --bind $HERE/dist/cvmfs/\$REPO /cvmfs/\$REPO
                     fi
                 done
-                cd - 2>/dev/null
+                cd - >/dev/null
             else
                 # map cvmfs repos mounted by parent
                 mount --rbind $HERE/dist/cvmfs $HERE/mnt/cvmfs
@@ -330,6 +349,9 @@ doexec()
 
                 export -n STDINCOPYFD
                 export CVMFSEXEC="exec $HERE/cvmfsexec"
+                if $USERFUSE; then
+                    export CVMFSMOUNT="$HERE/mountrepo"
+                fi
                 if [ "$CMDFIFO1" == "$CMDFIFO2" ]; then
                     echo "PID \$$" >&\$CVMFSEXEC_CMDFD
                 else
@@ -358,6 +380,6 @@ doexec()
 }
 
 # these functions are needed from within unshare so write them to a file
-declare -f parserepos doexec procreexec >$FUNCS
+declare -f usage parserepos doexec procreexec >$FUNCS
 
 doexec "$@"

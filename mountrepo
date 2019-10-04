@@ -20,6 +20,23 @@ fi
 
 REPO="$1"
 
+if [ -n "$CVMFSEXEC_CMDFD" ] && [ -n "$CVMFSEXEC_WAITFIFO" ]; then
+    # this is within cvmfsexec, requesting to mount another repo
+    if [ -z "$CVMFSMOUNT" ]; then
+        echo "$0: mount within cvmfsexec only works through \$CVMFSMOUNT interface" >&2
+        exit 1
+    fi
+
+    # Send command to the "parent" process still outside the namespace.
+    # "Parent" is in quotes because the linux process tree gets reversed and
+    #   it is actually a linux child.  It is a parent environment-wise though.
+    echo MOUNTREPO $REPO >&$CVMFSEXEC_CMDFD
+    exec {CVMFSEXEC_CMDFD}>&- # close it, no longer needed
+    # wait until that process is finished mounting
+    read RET <$CVMFSEXEC_WAITFIFO
+    exit $RET
+fi
+
 HERE="$(cd `dirname $0` && pwd)"
 DIST="$HERE/dist"
 
