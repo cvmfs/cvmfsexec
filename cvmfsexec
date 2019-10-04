@@ -14,10 +14,7 @@ usage()
     exit 1
 }
 
-HERE="`dirname $0`"
-if [ "$HERE" = "." ]; then
-    HERE=$PWD
-fi
+HERE="$(cd `dirname $0` && pwd)"
 
 export CVMFSEXEC_REPOS
 parserepos()
@@ -211,7 +208,7 @@ doexec()
         exec {WAITFD}>&-
     fi
 
-    rm -rf $HERE/mnt
+    rm -rf "$HERE/mnt"
 
     export STDINCOPYFD
 
@@ -290,6 +287,7 @@ doexec()
                 # close the waitfd, leaving it only for the background process
                 exec {WAITFD}>&-
 
+                cd $HERE
                 # mount the repos
                 for REPO in \$REPOS; do
                     if ! ./mountrepo \$REPO; then
@@ -304,6 +302,7 @@ doexec()
                         mount --bind $HERE/dist/cvmfs/\$REPO /cvmfs/\$REPO
                     fi
                 done
+                cd - 2>/dev/null
             else
                 # map cvmfs repos mounted by parent
                 mount --rbind $HERE/dist/cvmfs $HERE/mnt/cvmfs
