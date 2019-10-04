@@ -20,10 +20,7 @@ fi
 
 REPO="$1"
 
-HERE="`dirname $0`"
-if [ "$HERE" = "." ]; then
-    HERE=$PWD
-fi
+HERE="$(cd `dirname $0` && pwd)"
 DIST="$HERE/dist"
 
 if [ ! -f $DIST/usr/bin/cvmfs2 ] || \
@@ -34,9 +31,9 @@ fi
 
 DEFLOCAL=$DIST/etc/cvmfs/default.local
 if ! grep -q "^CVMFS_HTTP_PROXY=" $DEFLOCAL 2>/dev/null; then
-    echo 'CVMFS_HTTP_PROXY="auto;DIRECT"' >>$DEFLOCAL
-    echo "CVMFS_PAC_URLS=http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat" >>$DEFLOCAL
-fi
+    echo 'CVMFS_HTTP_PROXY="auto;DIRECT"'
+    echo 'CVMFS_PAC_URLS="http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"'
+fi >>$DEFLOCAL
 if ! grep -q "^CVMFS_NFILES=" $DEFLOCAL 2>/dev/null; then
     echo "CVMFS_NFILES=`ulimit -Hn`" >>$DEFLOCAL
 fi
