@@ -316,6 +316,8 @@ doexec()
                 if $USERFUSE; then
                     # mount a new /proc for the new pid space
                     mount -t proc proc /proc
+                    # map cvmfs mounts into pivotted root
+                    mount --rbind /.old-root$HERE/dist/cvmfs $HERE/dist/cvmfs
                 fi
             fi
 
