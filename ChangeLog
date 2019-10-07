@@ -1,3 +1,6 @@
+- Take advantage of user namespace fuse mounts on kernels >= 4.18 (CentOS 8)
+- Always use --rbind instead of --bind when doing underlay mounts
+
 cvmfsexec-1.1 - 12 September 2019
 - Preserve whitespace in parameters.
 - Enable adding additional mounted repositories by invoking $CVMFSEXEC.
