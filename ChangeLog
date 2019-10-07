@@ -1,5 +1,10 @@
-- Take advantage of user namespace fuse mounts on kernels >= 4.18 (CentOS 8)
-- Always use --rbind instead of --bind when doing underlay mounts
+cvmfsexec-2.0 - 7 October 2019
+- Take advantage of user namespace fuse mounts on kernels >= 4.18 (CentOS 8).
+    This enables cleaning up mountpoints even with kill -9.
+- Replace the $CVMFSEXEC interface with a simpler $CVMFSMOUNT/$CVMFSUMOUNT
+    interface that also leaves no extra processes in the process tree.
+- Always use --rbind instead of --bind when doing underlay mounts.
+- Add cvmfs-x509-helper in makedist when it is present.
 
 cvmfsexec-1.1 - 12 September 2019
 - Preserve whitespace in parameters.
