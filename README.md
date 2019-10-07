@@ -33,10 +33,10 @@ to mount, and makes the current process wait until completion.
 Repositories that are already mounted are ignored.  You can also unmount
 repositories from within the command with `$CVMFSUMOUNT repository.name`.
 
-If you invoke additional processes within the original process that you
-do not want to have the ability to mount/umount, such as a user payload
-that is invoked with singularity --contain, then close the $CVMFSEXEC_CMDFD
-file descriptor.  This can be done in bash with `{CVMFSEXEC_CMDFD}>&-`.
+If you invoke additional processes within the original process that are
+not trustworthy, such as a user payload that is invoked with singularity
+--contain, then close the $CVMFSEXEC_CMDFD file descriptor for those
+processes.  This can be done in bash with `{CVMFSEXEC_CMDFD}>&-`.
 
 ## Better operation on kernels >= 4.18
 
