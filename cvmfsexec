@@ -121,6 +121,28 @@ procreexec()
         cd "$2"
         ORIGPWD="$2"
         return
+    elif [ "$1" == MOUNTREPO ]; then
+        REPO="$2"
+        RET=0
+        if [[ " $REPOS " != *" $REPO "* ]]; then
+            # not already mounted
+            cd "$HERE"
+            ./mountrepo "$REPO"
+            RET=$?
+            if [ $? == 0 ]; then
+                if $USERFUSE; then
+                    mkdir -p "/cvmfs/$REPO"
+                    mount --bind "$HERE/dist/cvmfs/$REPO" "/cvmfs/$REPO"
+                    RET=$?
+                fi
+                # put new one at the beginning so config repo will
+                #   be unmounted last
+                CVMFSEXEC_REPOS="$REPO $CVMFSEXEC_REPOS"
+            fi
+            cd - >/dev/null
+        fi
+        echo "$RET" >$CVMFSEXEC_WAITFIFO
+        return
     elif [ "$1" != REEXEC ]; then
         return
     fi
@@ -185,7 +207,8 @@ doexec()
         done {WAITFD}>&-
         cd $ORIGPWD
 
-        UNSHAREOPTS=""
+        UNSHAREOPTS="--propagation unchanged"
+
         (
         # this is background process for accepting REEXEC from children
         trap "" 1 2 3 15  # ignore ordinary signals
@@ -278,26 +301,7 @@ doexec()
                         echo "\$(awk '{print \$2; exit}' /proc/self/uid_map) 0 1" >/proc/"\$PARAM"/uid_map
                         echo "ready" >$WAITFIFO2
                 elif $USERFUSE; then
-                    if [ "\$CMD" == MOUNTREPO ]; then
-                        RET=0
-                        REPO="\$PARAM"
-                        if [[ " \$CVMFSEXEC_REPOS " != *" \$REPO "* ]]; then
-                            # not already mounted
-                            CVMFSEXEC_REPOS="\$CVMFSEXEC_REPOS \$REPO"
-                            cd "$HERE"
-                            ./mountrepo "\$REPO"
-                            RET="\$?"
-                            if [ $? == 0 ]; then
-                                mkdir -p "/cvmfs/\$REPO"
-                                mount --bind "$HERE/dist/cvmfs/\$REPO" "/cvmfs/\$REPO"
-                                RET="\$"
-                            fi
-                            cd - >/dev/null
-                        fi
-                        echo $RET >$CVMFSEXEC_WAITFIFO
-                    else
-                        procreexec "\$CMD" "\$PARAM"
-                    fi
+                    procreexec "\$CMD" "\$PARAM"
                 fi
             done <&$STDINCOPYFD {CMDINFD}<$CMDFIFO2
             ) &
@@ -349,9 +353,7 @@ doexec()
 
                 export -n STDINCOPYFD
                 export CVMFSEXEC="exec $HERE/cvmfsexec"
-                if $USERFUSE; then
-                    export CVMFSMOUNT="$HERE/mountrepo"
-                fi
+                export CVMFSMOUNT="$HERE/mountrepo"
                 if [ "$CMDFIFO1" == "$CMDFIFO2" ]; then
                     echo "PID \$$" >&\$CVMFSEXEC_CMDFD
                 else
