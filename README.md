@@ -10,9 +10,9 @@ namespace fuse mounts.
 
 The cvmfs code and configuration is installed in a "dist" subdirectory
 under where the scripts are.  The easiest way to create the dist
-directory is to use "makedist".  It takes a parameter of "osg", "egi",
+directory is to use `makedist`.  It takes a parameter of "osg", "egi",
 or "default" to install the latest cvmfs and configuration rpm from
-one of those three sources.  Requires "rpm2cpio".
+one of those three sources.  Requires `rpm2cpio`.
 
 To customize any cvmfs configuration settings, put them in
 dist/etc/cvmfs/default.local.  In particular you may want to set
@@ -22,21 +22,21 @@ to 4000 MB.
 
 To execute a command in an environment where cvmfs repositories are
 mounted at "/cvmfs" and automatically unmounted upon exit, use
-"cvmfsexec repository.name ... -- [command]" where the default command
+`cvmfsexec repository.name ... -- [command]` where the default command
 is $SHELL.  It will automatically mount the configuration repository
 if one is defined. 
 
 Inside the command you can mount additional repositories by using
-"$CVMFSMOUNT repository.name".  Since the mounts have to happen outside
+`$CVMFSMOUNT repository.name`.  Since the mounts have to happen outside
 the user namespace, it actually sends a message to the original process
 to mount, and makes the current process wait until completion.
 Repositories that are already mounted are ignored.  You can also unmount
-repositories from within the command with "$CVMFSUMOUNT repository.name".
+repositories from within the command with `$CVMFSUMOUNT repository.name`.
 
 If you invoke additional processes within the original process that you
 do not want to have the ability to mount/umount, such as a user payload
 that is invoked with singularity --contain, then close the $CVMFSEXEC_CMDFD
-file descriptor.  This can be done in bash with "{CVMFSEXEC_CMDFD}>&-".
+file descriptor.  This can be done in bash with `{CVMFSEXEC_CMDFD}>&-`.
 
 ## Better operation on kernels >= 4.18
 
@@ -53,7 +53,7 @@ process that has fakeroot access in the user namespace.
 
 ## mountrepo/umountrepo without cvmfsexec
 
-When not using cvmfsexec, use "mountrepo repository.name" to mount a
+When not using cvmfsexec, use `mountrepo repository.name` to mount a
 repository.  Note that the osg configuration requires
 "config-osg.opensciencegrid.org" to be mounted first, and the egi
 configuration requires "config-egi.egi.eu".
@@ -61,5 +61,5 @@ configuration requires "config-egi.egi.eu".
 If you're not using cvmfsexec but are using a container system, bind
 mount $PWD/dist/cvmfs into the container as /cvmfs.
 
-To unmount all repositories, use "umountrepo -a", or to unmount an
-individual repository use "umountrepo repository.name".
+To unmount all repositories, use `umountrepo -a`, or to unmount an
+individual repository use `umountrepo repository.name`.
