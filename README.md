@@ -10,9 +10,9 @@ namespace fuse mounts.
 
 The cvmfs code and configuration is installed in a "dist" subdirectory
 under where the scripts are.  The easiest way to create the dist
-directory is to use `makedist`.  It takes a parameter of "osg", "egi",
+directory is to use makedist.  It takes a parameter of "osg", "egi",
 or "default" to install the latest cvmfs and configuration rpm from
-one of those three sources.  Requires `rpm2cpio`.
+one of those three sources.  Requires rpm2cpio.
 
 To customize any cvmfs configuration settings, put them in
 dist/etc/cvmfs/default.local.  In particular you may want to set
