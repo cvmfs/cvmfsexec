@@ -1,9 +1,12 @@
 # cvmfsexec
 
 This package is for mounting cvmfs as an unprivileged user, on systems
-where at least fusermount is available.  The cvmfsexec command itself
-additionally requires unprivileged user namespaces, but mountrepo and
-umountrepo also work separately with only fusermount.
+where fusermount or unprivileged namespace fuse mounts are available.
+The cvmfsexec command itself additionally requires unprivileged user
+namespaces, but mountrepo and umountrepo also work separately with only
+fusermount.  On newer kernels (more about that in the next section)
+fusermount is not needed and cvmfsexec instead uses unprivileged
+namespace fuse mounts.
 
 The cvmfs code and configuration is installed in a "dist" subdirectory
 under where the scripts are.  The easiest way to create the dist
@@ -24,13 +27,29 @@ is $SHELL.  It will automatically mount the configuration repository
 if one is defined. 
 
 Inside the command you can mount additional repositories by using
-$CVMFSEXEC instead of just "cvmfsexec".  That variable does "exec" on a
-complete path to cvmfsexec.  Since the mounts have to happen outside the
-user namespace, it actually sends a message to the other process to
-mount and execute the command, and makes the current process wait until
-completion.  Repositories that are already mounted are ignored.  Each
-invocation that adds at least one repository to mount adds an additional
-process in the process tree.  
+"$CVMFSMOUNT repository.name".  Since the mounts have to happen outside
+the user namespace, it actually sends a message to the original process
+to mount, and makes the current process wait until completion.
+Repositories that are already mounted are ignored.  You can also unmount
+repositories from within the command with "$CVMFSUMOUNT repository.name".
+
+If you invoke additional processes within the original process that you
+do not want to have the ability to mount/umount, such as a user payload
+that is invoked with singularity --contain, then close the $CVMFSEXEC_CMDFD
+file descriptor.  This can be done in bash with "{CVMFSEXEC_CMDFD}>&-".
+
+## Better operation on kernels >= 4.18
+
+A caveat on older kernels (for example RHEL7) is that a kill -9  of
+all the processes will not clean up the mounts, and they have to be
+separately unmounted later with umountrepo or fusermount -u.  On
+kernels >= 4.18 (for example RHEL8) the operation changes to do fuse
+mounts only inside of unprivileged user namespaces, which always
+completely cleans up mounts even with kill -9.
+
+$CVMFSMOUNT/$CVMFSUMOUNT still send a request to a parent process to
+mount/umount but it's not the original process, it's an intermediate
+process that has fakeroot access in the user namespace.
 
 ## mountrepo/umountrepo without cvmfsexec
 
