@@ -17,8 +17,8 @@ one of those three sources.  Requires rpm2cpio.
 To customize any cvmfs configuration settings, put them in
 dist/etc/cvmfs/default.local.  In particular you may want to set
 CVMFS_HTTP_PROXY, although the default is to use WLCG Web Proxy Auto
-Discovery.  You may also want to set CVMFS_QUOTA_LIMIT which defaults
-to 4000 MB.
+Discovery.  You may also want to set CVMFS_QUOTA_LIMIT, otherwise the
+default is 4000 MB.
 
 To execute a command in an environment where cvmfs repositories are
 mounted at "/cvmfs" and automatically unmounted upon exit, use
@@ -34,9 +34,9 @@ Repositories that are already mounted are ignored.  You can also unmount
 repositories from within the command with `$CVMFSUMOUNT repository.name`.
 
 If you invoke additional processes within the original process that are
-not trustworthy, such as a user payload that is invoked with singularity
+not trustworthy, such as user payloads that are invoked with singularity
 --contain, then close the $CVMFSEXEC_CMDFD file descriptor for those
-processes.  This can be done in bash with `{CVMFSEXEC_CMDFD}>&-`.
+processes.  This can be done in bash with `exec {CVMFSEXEC_CMDFD}>&-`.
 
 ## Better operation on kernels >= 4.18
 
@@ -45,7 +45,9 @@ all the processes will not clean up the mounts, and they have to be
 separately unmounted later with umountrepo or fusermount -u.  On
 kernels >= 4.18 (for example RHEL8) the operation changes to do fuse
 mounts only inside of unprivileged user namespaces, which always
-completely cleans up mounts even with kill -9.
+completely cleans up mounts even with kill -9.  This also uses a
+pid namespace to ensure that all fuse processes are always cleaned up
+when the command exits.
 
 $CVMFSMOUNT/$CVMFSUMOUNT still send a request to a parent process to
 mount/umount but it's not the original process, it's an intermediate
