@@ -1,3 +1,8 @@
+cvmfsexec-2.1 - 9 October 2019
+- Direct logs to per-repository files in "log" directory instead of syslog.
+- Add makedist -o option to create one self-extracting script with the
+    cvmfs distribution and cvmfsexec tools.
+
 cvmfsexec-2.0 - 7 October 2019
 - Take advantage of user namespace fuse mounts on kernels >= 4.18 (CentOS 8).
     This enables cleaning up mountpoints even with kill -9.
