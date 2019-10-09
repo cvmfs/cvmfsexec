@@ -53,6 +53,15 @@ $CVMFSMOUNT/$CVMFSUMOUNT still send a request to a parent process to
 mount/umount but it's not the original process, it's an intermediate
 process that has fakeroot access in the user namespace.
 
+## Self-extracting distribution
+
+After running makedist and making any customizations you want, you may
+optionally run `makedist -o <file>` where file becomes a single script
+containing the cvmfs dist and cvmfsexec tools which self-extracts and
+executes cvmfsexec, for simplest distribution.  Running the script
+leaves behind a `.cvmfsexec` directory containing the files, in the same
+directory as the script.
+
 ## mountrepo/umountrepo without cvmfsexec
 
 When not using cvmfsexec, use `mountrepo repository.name` to mount a

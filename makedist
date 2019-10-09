@@ -7,7 +7,15 @@
 
 usage()
 {
-    echo "Usage: makedist {osg|egi|default}" >&2
+    (
+    echo "Usage: makedist {osg|egi|default}"
+    echo "       makedist -o <self_extracting_script>"
+    echo " The first usage creates a distribution in 'dist' directory."
+    echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
+    echo "   given file name that self extracts and executes cvmfsexec."
+    echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
+    echo "   directory as the script."
+    ) >&2
     exit 1
 }
 
@@ -28,7 +36,27 @@ distroversion() {
 EL="`distroversion`"
 ARCH="`arch`"
 
+HERE="$(cd `dirname $0` && pwd)"
+
 case $1 in
+    -o)
+        if [ $# != 2 ]; then
+            usage
+        fi
+        sed 's/^[ \t]*//' >$2 <<'!EOF!'
+        #!/bin/bash
+        BASE="$(cd `dirname $0` && pwd)/.cvmfsexec"
+        rm -rf $BASE
+        mkdir $BASE
+        TAR_START="`awk '/^__TAR_BELOW__/ {print NR + 1; exit 0; }' $0`"
+        tail -n+$TAR_START $0 | tar -xzf - -C $BASE
+        exec $BASE/cvmfsexec "$@"
+        __TAR_BELOW__
+!EOF!
+        tar --exclude 'dist/var/run/cvmfs/*' --exclude 'dist/var/lib/cvmfs/*' -czvf - -C $HERE cvmfsexec mountrepo umountrepo dist >>"$2"
+        chmod +x "$2"
+        exit
+        ;;
     osg)
         if [ "$EL" = 6 ]; then
             REL=3.4
@@ -53,10 +81,6 @@ CVMFS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 CONFIG="`echo "$LIST"|grep "^cvmfs-config-$1-"|tail -1`"
 HELPER="`echo "$LIST"|grep "^cvmfs-x509-helper"|tail -1`"
 
-HERE="`dirname $0`"
-if [ "$HERE" = "." ]; then
-    HERE=$PWD
-fi
 DIST="$HERE/dist"
 
 mkdir -p $DIST
