@@ -46,15 +46,6 @@ if [ ! -f $DIST/usr/bin/cvmfs2 ] || \
     exit 1
 fi
 
-DEFLOCAL=$DIST/etc/cvmfs/default.local
-if ! grep -q "^CVMFS_HTTP_PROXY=" $DEFLOCAL 2>/dev/null; then
-    echo 'CVMFS_HTTP_PROXY="auto;DIRECT"'
-    echo 'CVMFS_PAC_URLS="http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"'
-fi >>$DEFLOCAL
-if ! grep -q "^CVMFS_NFILES=" $DEFLOCAL 2>/dev/null; then
-    echo "CVMFS_NFILES=`ulimit -Hn`" >>$DEFLOCAL
-fi
-
 CONFFILE="`mktemp`"
 trap "rm -f $CONFFILE" 0
 
@@ -73,7 +64,22 @@ CONFIG_REPO="`sed -n 's/^CVMFS_CONFIG_REPOSITORY=//p' $DIST/etc/cvmfs/default.d/
 if [ "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/default.conf
 fi
-relocate $DIST/etc/cvmfs/default.local
+
+DEFLOCAL=$DIST/etc/cvmfs/default.local
+relocate $DEFLOCAL
+# set some defaults if they weren't already in the dist's default.local
+if ! grep -q "^CVMFS_HTTP_PROXY=" $DEFLOCAL 2>/dev/null; then
+    echo 'CVMFS_HTTP_PROXY="auto;DIRECT"'
+    echo 'CVMFS_PAC_URLS="http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"'
+fi
+if ! grep -q "^CVMFS_NFILES=" $DEFLOCAL 2>/dev/null; then
+    echo "CVMFS_NFILES=`ulimit -Hn`"
+fi
+if ! grep -q "^CVMFS_USYSLOG=" $DEFLOCAL 2>/dev/null; then
+    mkdir -p $HERE/log
+    echo "CVMFS_USYSLOG=$HERE/log/$REPO.log"
+fi
+
 if [ "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/domain.d/$DOMAIN.conf
 fi
