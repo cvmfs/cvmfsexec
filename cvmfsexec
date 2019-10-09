@@ -6,7 +6,7 @@
 #   $CVMFSMOUNT and repositories can be umounted with $CVMFSUMOUNT.
 # Written by Dave Dykstra September 2019
 
-VERSION=2.0
+VERSION=2.1
 
 usage()
 {
