@@ -1,3 +1,9 @@
+cvmfsexec-2.3 - 23 December 2019
+- fix support of cvmfs-2.7.0 by using its new CVMFS_LIBRARY_PATH.
+
+cvmfsexec-2.2 - 4 December 2019
+- allow multiple settings of CVMFS_CONFIG_REPOSITORY in default.d files.
+
 cvmfsexec-2.1 - 9 October 2019
 - Direct logs to per-repository files in "log" directory instead of syslog.
 - Add makedist -o option to create one self-extracting script with the
