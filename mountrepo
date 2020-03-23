@@ -49,11 +49,18 @@ fi
 CONFFILE="`mktemp`"
 trap "rm -f $CONFFILE" 0
 
+# Relocate the given files, and substitute a ". ../" with a full path
+#  to the parent directory of the first file.  The latter is a hack for
+#  the EGI configuration repo which uses that idiom, reading a file 
+#  (common.conf) that itself does not need relocation; it is not in any
+#  way a general purpose processor of the bash "source" feature.
+
 relocate()
 {
 sed -e "s,^\([^/]*\)/cvmfs,\1$DIST/cvmfs," \
     -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
-    -e "s,^\([^/]*\)/var,\1$DIST/var," $* 2>/dev/null
+    -e "s,^\([^/]*\)/var,\1$DIST/var," \
+    -e "s,^\. \.\./,. ${1%/*/*}/," $* 2>/dev/null
 }
 
 DOMAIN="`echo "$REPO"|cut -d. -f2-`"
