@@ -1,5 +1,9 @@
+cvmfsexec-2.4 - 23 March 2020
+- Add support in mountrepo for ". ../" in config files, as it is used in
+    the EGI config repository for reading common.conf.
+
 cvmfsexec-2.3 - 23 December 2019
-- fix support of cvmfs-2.7.0 by using its new CVMFS_LIBRARY_PATH.
+- Fix support of cvmfs-2.7.0 by using its new CVMFS_LIBRARY_PATH.
 
 cvmfsexec-2.2 - 4 December 2019
 - allow multiple settings of CVMFS_CONFIG_REPOSITORY in default.d files.
