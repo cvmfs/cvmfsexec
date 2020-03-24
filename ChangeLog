@@ -1,3 +1,6 @@
+cvmfsexec-2.5 - 24 March 2020
+- Exclude cvmfs-x509-helper-debug in makedist.
+
 cvmfsexec-2.4 - 23 March 2020
 - Add support in mountrepo for ". ../" in config files, as it is used in
     the EGI config repository for reading common.conf.
