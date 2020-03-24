@@ -78,8 +78,8 @@ esac
 
 LIST="`curl -s $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 CVMFS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
-CONFIG="`echo "$LIST"|grep "^cvmfs-config-$1-"|tail -1`"
-HELPER="`echo "$LIST"|grep "^cvmfs-x509-helper"|tail -1`"
+CONFIG="`echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
+HELPER="`echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
 
 DIST="$HERE/dist"
 
