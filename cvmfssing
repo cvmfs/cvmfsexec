@@ -1,0 +1,92 @@
+#!/bin/bash
+# Run a singularity container including cvmfs repositories mounted
+#   with the singularity --fusemount option.
+# Written by Dave Dykstra March 2020
+
+VERSION=2.5
+
+ME="`basename $0`"
+
+usage()
+{
+    echo "Usage: cvmfssing [-v] command"
+    echo "       -v:   print current version and exit"
+    echo "    command may contain whitespace"
+    echo
+    echo "Required environment variables:"
+    echo " CVMFSSING_REPOSITORIES  Comma-separated cvmfs repositories to mount"
+    echo " CVMFSSING_IMAGE         singularity container path or URL"
+    echo
+    echo "Optional environment variables:"
+    echo " CVMFSSING_CACHEDIR      Directory for the cvmfs cache"
+    echo " CVMFSSING_CVMOFSOPTS    CVMFS options file (default.local)"
+    echo "                           - must set at least CVMFS_HTTP_PROXY"
+    exit 1
+} >&2
+
+HERE="$(cd `dirname $0` && pwd)"
+
+ORIGPWD=$PWD
+
+while getopts "v" OPTION; do
+    case $OPTION in
+        v)  echo "$VERSION"
+            exit
+            ;;
+        ?)  shift $(($OPTIND-2))
+            usage
+            ;;
+    esac
+done
+shift $(($OPTIND-1))
+
+if [ $# = 0 ]; then
+    usage
+fi
+
+if [ ! -d $HERE/dist ]; then
+    echo "$ME: Must be run from where cvmfs distribution is in 'dist' subdirectory" >&2
+    exit 1
+fi
+
+if [ -z "$CVMFSSING_REPOSITORIES" ]; then
+    echo "$ME: CVMFSSING_REPOSITORIES not set" >&2
+    exit 1
+fi
+
+if [ -z "$CVMFSSING_IMAGE" ]; then
+    echo "$ME: CVMFSSING_IMAGE not set" >&2
+    exit 1
+fi
+
+REPOS="$CVMFSSING_REPOSITORIES"
+# Add the config repo if not already asked for
+CONFIG_REPO="`grep -h '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
+if [[ ",$REPOS," != *",$CONFIG_REPO,"* ]]; then
+    REPOS="$CONFIG_REPO,$REPOS"
+fi
+
+declare -a MOUNT_ARGS
+for R in ${REPOS//,/ }; do
+    MOUNT_ARGS+=(--fusemount "\"container:cvmfs2 $R /cvmfs/$R\"")
+done
+
+cd $HERE/dist
+
+if [ -n "$CVMFSSING_CVMFSOPTS" ]; then
+    cp $CVMFSSING_CVMFSOPTS etc/cvmfs/default.local
+fi
+
+for P in `find * ! -type d ! -path '*/doc/*' ! -path 'var/lib/cvmfs/*'| \
+        sed 's,/cvmfs/.*,/cvmfs,'|uniq`; do
+    SINGULARITY_BINDPATH="$SINGULARITY_BINDPATH,$PWD/$P:/$P"
+done
+SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH#,}" # remove leading comma
+export SINGULARITY_BINDPATH
+
+CACHEDIR=${CVMFSSING_CACHEDIR:-$PWD/var/lib/cvmfs}
+
+cd $ORIGPWD
+
+exec singularity exec -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
+    "${MOUNT_ARGS[@]}" $CVMFSSING_IMAGE "${@}"
