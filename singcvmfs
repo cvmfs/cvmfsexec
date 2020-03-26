@@ -9,19 +9,19 @@ ME="`basename $0`"
 
 usage()
 {
-    echo "Usage: cvmfssing [-v] command"
+    echo "Usage: singcvmfs [-v] command"
     echo "       -v:   print current version and exit"
     echo "    command may contain whitespace"
     echo
     echo "Required environment variables:"
-    echo " CVMFSSING_REPOSITORIES  Comma-separated cvmfs repositories to mount"
-    echo " CVMFSSING_IMAGE         singularity container path or URL"
+    echo " SINGCVMFS_REPOSITORIES  Comma-separated cvmfs repositories to mount"
+    echo " SINGCVMFS_IMAGE         singularity container path or URL"
     echo
     echo "Optional environment variables:"
-    echo " CVMFSSING_CACHEDIR      Directory for the cvmfs cache"
-    echo " CVMFSSING_CVMFSOPTSFILE CVMFS options file (default.local)"
+    echo " SINGCVMFS_CACHEDIR      Directory for the cvmfs cache"
+    echo " SINGCVMFS_CVMFSOPTSFILE CVMFS options file (default.local)"
     echo "                           - must set at least CVMFS_HTTP_PROXY"
-    echo " CVMFSSING_SINGOPTS      Extra singularity options"
+    echo " SINGCVMFS_SINGOPTS      Extra singularity options"
     exit 1
 } >&2
 
@@ -50,17 +50,17 @@ if [ ! -d $HERE/dist ]; then
     exit 1
 fi
 
-if [ -z "$CVMFSSING_REPOSITORIES" ]; then
-    echo "$ME: CVMFSSING_REPOSITORIES not set" >&2
+if [ -z "$SINGCVMFS_REPOSITORIES" ]; then
+    echo "$ME: SINGCVMFS_REPOSITORIES not set" >&2
     exit 1
 fi
 
-if [ -z "$CVMFSSING_IMAGE" ]; then
-    echo "$ME: CVMFSSING_IMAGE not set" >&2
+if [ -z "$SINGCVMFS_IMAGE" ]; then
+    echo "$ME: SINGCVMFS_IMAGE not set" >&2
     exit 1
 fi
 
-REPOS="$CVMFSSING_REPOSITORIES"
+REPOS="$SINGCVMFS_REPOSITORIES"
 # Add the config repo if not already asked for
 CONFIG_REPO="`grep -h '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
 if [[ ",$REPOS," != *",$CONFIG_REPO,"* ]]; then
@@ -74,8 +74,8 @@ done
 
 cd $HERE/dist
 
-if [ -n "$CVMFSSING_CVMFSOPTSFILE" ]; then
-    cp $CVMFSSING_CVMFSOPTSFILE etc/cvmfs/default.local
+if [ -n "$SINGCVMFS_CVMFSOPTSFILE" ]; then
+    cp $SINGCVMFS_CVMFSOPTSFILE etc/cvmfs/default.local
 fi
 
 for P in `find * ! -type d ! -path '*/doc/*' ! -path 'var/lib/cvmfs/*'| \
@@ -85,9 +85,9 @@ done
 SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH#,}" # remove leading comma
 export SINGULARITY_BINDPATH
 
-CACHEDIR=${CVMFSSING_CACHEDIR:-$PWD/var/lib/cvmfs}
+CACHEDIR=${SINGCVMFS_CACHEDIR:-$PWD/var/lib/cvmfs}
 
 cd $ORIGPWD
 
 exec singularity exec -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
-    "${MOUNT_ARGS[@]}" "${CVMFSSING_SINGOPTS[@]}" $CVMFSSING_IMAGE "${@}"
+    "${MOUNT_ARGS[@]}" "${SINGCVMFS_SINGOPTS[@]}" $SINGCVMFS_IMAGE "${@}"
