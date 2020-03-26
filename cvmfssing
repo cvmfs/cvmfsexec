@@ -19,8 +19,9 @@ usage()
     echo
     echo "Optional environment variables:"
     echo " CVMFSSING_CACHEDIR      Directory for the cvmfs cache"
-    echo " CVMFSSING_CVMOFSOPTS    CVMFS options file (default.local)"
+    echo " CVMFSSING_CVMFSOPTSFILE CVMFS options file (default.local)"
     echo "                           - must set at least CVMFS_HTTP_PROXY"
+    echo " CVMFSSING_SINGOPTS      Extra singularity options"
     exit 1
 } >&2
 
@@ -73,8 +74,8 @@ done
 
 cd $HERE/dist
 
-if [ -n "$CVMFSSING_CVMFSOPTS" ]; then
-    cp $CVMFSSING_CVMFSOPTS etc/cvmfs/default.local
+if [ -n "$CVMFSSING_CVMFSOPTSFILE" ]; then
+    cp $CVMFSSING_CVMFSOPTSFILE etc/cvmfs/default.local
 fi
 
 for P in `find * ! -type d ! -path '*/doc/*' ! -path 'var/lib/cvmfs/*'| \
@@ -89,4 +90,4 @@ CACHEDIR=${CVMFSSING_CACHEDIR:-$PWD/var/lib/cvmfs}
 cd $ORIGPWD
 
 exec singularity exec -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
-    "${MOUNT_ARGS[@]}" $CVMFSSING_IMAGE "${@}"
+    "${MOUNT_ARGS[@]}" "${CVMFSSING_SINGOPTS[@]}" $CVMFSSING_IMAGE "${@}"
