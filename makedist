@@ -69,10 +69,12 @@ case $1 in
         #!/bin/bash
         BASEDIR="$(cd `dirname $0` && pwd)"
         BASE="$BASEDIR/.cvmfsexec"
-        rm -rf $BASE
-        mkdir $BASE
-        TAR_START="`awk '/^__TAR_BELOW__/ {print NR + 1; exit 0; }' $0`"
-        tail -n+$TAR_START $0 | tar -xzf - -C $BASE
+        if [ $0 -nt $BASE ]; then
+            rm -rf $BASE
+            mkdir $BASE
+            TAR_START="`awk '/^__TAR_BELOW__/ {print NR + 1; exit 0; }' $0`"
+            tail -n+$TAR_START $0 | tar -xzf - -C $BASE
+        fi
         exec $BASE/cvmfsexec "$@"
         __TAR_BELOW__
 !EOF!
