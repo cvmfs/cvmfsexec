@@ -45,8 +45,8 @@ if [ $# = 0 ]; then
     usage
 fi
 
-if [ ! -d $HERE/dist ]; then
-    echo "$ME: Must be run from where cvmfs distribution is in 'dist' subdirectory" >&2
+if [ ! -f $HERE/dist/usr/lib*/libcvmfs_fuse3.so ]; then
+    echo "$ME: Must be run from where cvmfs distribution was made by 'makedist -s'" >&2
     exit 1
 fi
 
