@@ -1,3 +1,6 @@
+cvmfsexec-2.6 - 30 March 2020
+- Avoid relocating OASIS_CERTIFICATES variable in oasis.opensciencegrid.org
+
 cvmfsexec-2.5 - 24 March 2020
 - Exclude cvmfs-x509-helper-debug in makedist.
 
