@@ -96,8 +96,7 @@ if [ "$REPO" != "$CONFIG_REPO" ]; then
     REPOCONF=$DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/config.d/$REPO.conf
     if [ "$REPO" = oasis.opensciencegrid.org ]; then
         # OASIS_CERTIFICATES is one special variable we do not want relocated
-        relocate $REPOCONF | \
-         sed 's,^OASIS_CERTIFICATES=$CVMFS_MOUNT_DIR,OASIS_CERTIFICATES=/cvmfs,'
+        relocate $REPOCONF | sed 's,^\(OASIS_CERTIFICATES\)=.[^/]*,\1=/cvmfs,'
     else
         relocate $REPOCONF
     fi
