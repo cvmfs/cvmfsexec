@@ -9,7 +9,7 @@ ME="`basename $0`"
 
 usage()
 {
-    echo "Usage: singcvmfs [-v] command"
+    echo "Usage: singcvmfs [-v] [command]"
     echo "       -v:   print current version and exit"
     echo "    command may contain whitespace"
     echo
@@ -41,10 +41,6 @@ while getopts "v" OPTION; do
 done
 shift $(($OPTIND-1))
 
-if [ $# = 0 ]; then
-    usage
-fi
-
 if [ ! -f $HERE/dist/usr/lib*/libcvmfs_fuse3.so ]; then
     echo "$ME: Must be run from where cvmfs distribution was made by 'makedist -s'" >&2
     exit 1
@@ -52,11 +48,13 @@ fi
 
 if [ -z "$SINGCVMFS_REPOSITORIES" ]; then
     echo "$ME: SINGCVMFS_REPOSITORIES not set" >&2
+    usage
     exit 1
 fi
 
 if [ -z "$SINGCVMFS_IMAGE" ]; then
     echo "$ME: SINGCVMFS_IMAGE not set" >&2
+    usage
     exit 1
 fi
 
@@ -89,5 +87,5 @@ CACHEDIR=${SINGCVMFS_CACHEDIR:-$PWD/var/lib/cvmfs}
 
 cd $ORIGPWD
 
-exec singularity exec -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
-    "${MOUNT_ARGS[@]}" "${SINGCVMFS_SINGOPTS[@]}" $SINGCVMFS_IMAGE "${@}"
+exec singularity run -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
+    "${MOUNT_ARGS[@]}" ${SINGCVMFS_SINGOPTS[@]} $SINGCVMFS_IMAGE "$@"
