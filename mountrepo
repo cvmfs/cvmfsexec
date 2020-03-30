@@ -93,7 +93,9 @@ fi
 relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.conf
 relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.local
 if [ "$REPO" != "$CONFIG_REPO" ]; then
-    relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/config.d/$REPO.conf
+    # OASIS_CERTIFICATES is one special variable we do not want relocated
+    relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/config.d/$REPO.conf | \
+        sed 's,^OASIS_CERTIFICATES=$CVMFS_MOUNT_DIR,OASIS_CERTIFICATES=/cvmfs,'
 fi
 relocate $DIST/etc/cvmfs/config.d/$REPO.conf
 relocate $DIST/etc/cvmfs/config.d/$REPO.local
