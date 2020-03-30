@@ -53,17 +53,21 @@ case $1 in
         if [ $# != 2 ]; then
             usage
         fi
-        if [ ! -d $DIST ]; then
-            echo "$DIST not found" >&2
-            exit 1
-        fi
         BASENAME=cvmfsexec
         TOOLS="cvmfsexec mountrepo umountrepo"
         SEDOPTS=""
+        NEEDLIB=libcvmfs_fuse.so
+        REQUIRES=makedist
         if $SING; then
             BASENAME=singcvmfs
             TOOLS="singcvmfs"
-            SEDOPTS="-e s/cvmfsexec/$BASENAME/ -e s/^BASEDIR=.*/BASEDIR=\$HOME/" 
+            SEDOPTS="-e s/cvmfsexec/$BASENAME/ -e s/^BASEDIR=.*/BASEDIR=\$HOME/"
+            NEEDLIB=libcvmfs_fuse3.so
+            REQUIRES="makedist -s"
+        fi
+        if [ ! -f $DIST/usr/lib*/$NEEDLIB ]; then
+            echo "Must be run from where cvmfs distribution was made by $REQUIRES" >&2
+            exit 1
         fi
         sed -e 's/^[ \t]*//' $SEDOPTS >$2 <<'!EOF!'
         #!/bin/bash
