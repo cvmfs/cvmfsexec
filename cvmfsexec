@@ -21,8 +21,14 @@ KERNEL_VERSION="$(uname -r)"
 MAJORKERN=${KERNEL_VERSION/.*/}
 RESTKERN=${KERNEL_VERSION#$MAJORKERN.}
 MINORKERN=${RESTKERN/.*/}
+REVKERN=${KERNEL_VERSION/*-/}
+REVKERN=${REVKERN/.*/}
 USERFUSE=false
 if [ "$MAJORKERN" -gt 4 ] || [ "$MAJORKERN" -eq 4 -a "$MINORKERN" -ge 18 ]; then
+    USERFUSE=true
+fi
+if [ "$MAJORKERN" -eq 3 -a "$MINORKERN" -eq 10 -a "$REVKERN" -ge 1127 ]; then
+    # RHEL 7.8+ kernel
     USERFUSE=true
 fi
 

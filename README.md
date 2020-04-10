@@ -10,16 +10,19 @@ do this in 4 different ways:
    by a container manager such as singularity.
 2. On systems where fusermount is available and unprivileged user
    namespaces are enabled, but unprivileged namespace fuse mounts are not
-   available (in particular RHEL7 with `sysctl user.max_user_namespaces` > 0),
+   available (in particular RHEL <=7.7 with
+   `sysctl user.max_user_namespaces` > 0),
    the `cvmfsexec` command can mount cvmfs repositories, map them into
-   /cvmfs, and unmount them when it exits. The main disadvantage is
+   /cvmfs, and unmount them when it exits.  singularity may even be
+   run unprivileged from cvmfs in this case.  The main disadvantage is
    that if the processes are hard-killed (kill -9), mountpoints are left
    behind and are difficult to clean up.
 3. On systems where unprivileged namespace fuse mounts are available
-   (newer kernels > 4.18, such as on RHEL8), the `cvmfsexec` command can
-   entirely manage mounting and unmounting of cvmfs repositories in the
-   namespace, so if they get killed everything gets cleanly unmounted.
-   fusermount is not needed in this case.
+   (newer kernels >= 4.18 as on RHEL8 or >= 3.10.0-1127 as on RHEL 7.8),
+   the `cvmfsexec` command can entirely manage mounting and unmounting
+   of cvmfs repositories in the namespace, so if they get killed
+   everything gets cleanly unmounted.  fusermount is not needed in this
+   case.
 4. On systems that have no fusermount nor unprivileged user namespace
    fuse mounts but do have a setuid installation of singularity >= 3.4,
    an entirely separate command in this package `singcvmfs` can mount
@@ -43,7 +46,10 @@ To customize any cvmfs configuration settings, put them in
 `dist/etc/cvmfs/default.local`.  In particular you may want to set
 CVMFS_HTTP_PROXY, although the default is to use WLCG Web Proxy Auto
 Discovery.  You may also want to set CVMFS_QUOTA_LIMIT, otherwise the
-default is 4000 MB.
+default is 4000 MB.  The default CVMFS_CACHE_BASE for the cache
+shared between the cvmfs repository is in under the dist directory,
+`dist/var/lib/cvmfs`.  Make sure that the cache does not get shared
+between multiple machines.
 
 ## Self-contained distribution
 
@@ -71,8 +77,13 @@ audience, and older HPC systems as a secondary audience.
 
 # cvmsexec command
 
-The requirements for cvmfsexec are discussed above in the descriptions
-of methods 2 & 3.
+The cvmfsexec command requires unprivileged user namespaces.  On RHEL8
+unprivileged user namepaces (and user namespace fuse mounts) are
+available by default, but on RHEL7 they need to be enabled by setting a
+sysctl parameter as detailed in the 
+[OSG unprivileged singularity instructions](https://opensciencegrid.org/docs/worker-node/install-singularity/#enabling-unprivileged-singularity).
+In addition cvmfsexec requires fusermount on kernels older than
+those that come with RHEL7.8.
 
 To execute a command in an environment where cvmfs repositories are
 mounted at /cvmfs and automatically unmounted upon exit, use
@@ -95,14 +106,14 @@ for those processes.  This can be done in bash with
 
 ## Better cvmfsexec operation on newer kernels
 
-A caveat on older kernels (for example RHEL7) is that a kill -9  of all
-the processes will not clean up the mounts, and they have to be
-separately unmounted later with `umountrepo` or `fusermount -u`.  On
-kernels >= 4.18 (for example RHEL8) the operation changes to do fuse
-mounts only inside of unprivileged user namespaces, which always
-completely cleans up mounts even with kill -9.  This also uses a pid
-namespace to ensure that all fuse processes are always cleaned up when
-the command exits.
+A caveat on older kernels (for example RHEL7.7 and older) is that a
+kill -9  of all the processes will not clean up the mounts, and they
+have to be separately unmounted later with `umountrepo` or `fusermount -u`.
+On kernels >= 4.18 (for example RHEL8) or >= 3.10.0-1127 (for example on
+RHEL7.8) the operation changes to do fuse mounts only inside of
+unprivileged user namespaces, which always completely cleans up mounts
+even with kill -9.  This also uses a pid namespace to ensure that all
+fuse processes are always cleaned up when the command exits.
 
 $CVMFSMOUNT/$CVMFSUMOUNT still send a request to a parent process to
 mount/umount but it's not the original process, it's an intermediate
@@ -110,16 +121,18 @@ process that has fakeroot access in the user namespace.
 
 ## mountrepo/umountrepo without cvmfsexec
 
-When not using cvmfsexec, but with fusermount still available use
+When not using cvmfsexec, but with fusermount available use
 `mountrepo repository.name` to mount a repository.  Note that the osg
 configuration requires "config-osg.opensciencegrid.org" to be mounted
 first, and the egi configuration requires "config-egi.egi.eu".
 
-If you're not using cvmfsexec but are using a container system, bind
-mount $PWD/dist/cvmfs into the container as /cvmfs.
+If you are using a container system, bind mount $PWD/dist/cvmfs into the
+container as /cvmfs.
 
 To unmount all repositories, use `umountrepo -a`, or to unmount an
-individual repository use `umountrepo repository.name`.
+individual repository use `umountrepo repository.name`.  Make sure that
+all the processes do not get killed or the repositories will remain
+mounted but inaccessible.
 
 # singcvmfs command
 
@@ -150,3 +163,9 @@ repo
 
 There are other optional environment variables that may be set.
 Run `singcvmfs -h` for more details.
+
+Caveat: singcvmfs works by bind-mounting all of the files from the cvmfs
+distribution into the container, including the fuse3 libraries.  It
+expects other base system libraries to be available inside the
+container, so if the container uses a different base OS distribution it
+will likely not work unless compatible libraries are in the container.
