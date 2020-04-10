@@ -8,13 +8,15 @@
 usage()
 {
     (
-    echo "Usage: makedist {osg|egi|default}"
-    echo "       makedist -o <self_extracting_script>"
+    echo "Usage: makedist [-s] {osg|egi|default}"
+    echo "       makedist [-s] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
     echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
     echo "   given file name that self extracts and executes cvmfsexec."
     echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
     echo "   directory as the script."
+    echo " The -s option makes both operations work for singcvmfs instead"
+    echo "   of cvmfsexec, and files are left in \$HOME/.singcvmfs"
     ) >&2
     exit 1
 }
@@ -38,22 +40,49 @@ ARCH="`arch`"
 
 HERE="$(cd `dirname $0` && pwd)"
 
+DIST="$HERE/dist"
+
+SING=false
+if [ "$1" = -s ]; then
+    SING=true
+    shift
+fi
 case $1 in
     -o)
+
         if [ $# != 2 ]; then
             usage
         fi
-        sed 's/^[ \t]*//' >$2 <<'!EOF!'
+        BASENAME=cvmfsexec
+        TOOLS="cvmfsexec mountrepo umountrepo"
+        SEDOPTS=""
+        NEEDLIB=libcvmfs_fuse.so
+        REQUIRES=makedist
+        if $SING; then
+            BASENAME=singcvmfs
+            TOOLS="singcvmfs"
+            SEDOPTS="-e s/cvmfsexec/$BASENAME/ -e s/^BASEDIR=.*/BASEDIR=\$HOME/"
+            NEEDLIB=libcvmfs_fuse3.so
+            REQUIRES="makedist -s"
+        fi
+        if [ ! -f $DIST/usr/lib*/$NEEDLIB ]; then
+            echo "Must be run from where cvmfs distribution was made by $REQUIRES" >&2
+            exit 1
+        fi
+        sed -e 's/^[ \t]*//' $SEDOPTS >$2 <<'!EOF!'
         #!/bin/bash
-        BASE="$(cd `dirname $0` && pwd)/.cvmfsexec"
-        rm -rf $BASE
-        mkdir $BASE
-        TAR_START="`awk '/^__TAR_BELOW__/ {print NR + 1; exit 0; }' $0`"
-        tail -n+$TAR_START $0 | tar -xzf - -C $BASE
+        BASEDIR="$(cd `dirname $0` && pwd)"
+        BASE="$BASEDIR/.cvmfsexec"
+        if [ $0 -nt $BASE ]; then
+            rm -rf $BASE
+            mkdir $BASE
+            TAR_START="`awk '/^__TAR_BELOW__/ {print NR + 1; exit 0; }' $0`"
+            tail -n+$TAR_START $0 | tar -xzf - -C $BASE
+        fi
         exec $BASE/cvmfsexec "$@"
         __TAR_BELOW__
 !EOF!
-        tar --exclude 'dist/var/run/cvmfs/*' --exclude 'dist/var/lib/cvmfs/*' -czvf - -C $HERE cvmfsexec mountrepo umountrepo dist >>"$2"
+        tar --exclude 'dist/var/run/cvmfs/*' --exclude 'dist/var/lib/cvmfs/*' -czvf - -C $HERE $TOOLS dist >>"$2"
         chmod +x "$2"
         exit
         ;;
@@ -76,16 +105,40 @@ case $1 in
     *) usage;;
 esac
 
-LIST="`curl -s $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
-CVMFS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
-CONFIG="`echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
-HELPER="`echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
+if [ -d $DIST ]; then
+    echo "$DIST already exists" >&2
+    exit 1
+fi
 
-DIST="$HERE/dist"
+LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
+PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
+PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
+PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
 
-mkdir -p $DIST
-cd $DIST
-for PKG in $CVMFS $CONFIG $HELPER; do
-    echo "Extracting $URL/$PKG into $DIST"
-    curl -s "$URL/$PKG"|rpm2cpio -|cpio -idmv
+URLS=""
+EPELPKGS=""
+EPELURL="http://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages/f/"
+if $SING; then
+    PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
+    EPELPKGS="`curl -Ls $EPELURL|grep fuse3-libs-[0-9]|sed 's/.*href="//;s/".*//'`"
+fi
+
+for PKG in $PKGS; do
+    URLS="$URLS $URL/$PKG"
 done
+for PKG in $EPELPKGS; do
+    URLS="$URLS $EPELURL/$PKG"
+done
+
+mkdir $DIST
+cd $DIST
+for U in $URLS; do
+    echo "Extracting $U into $DIST"
+    curl -Ls "$U"|rpm2cpio -|cpio -idmv
+done
+
+echo "./etc/cvmfs/default.local"
+cat >etc/cvmfs/default.local <<!EOF!
+CVMFS_HTTP_PROXY="auto;DIRECT"
+CVMFS_PAC_URLS="http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"
+!EOF!
