@@ -1,3 +1,11 @@
+- Change makedist to fail with better error messages when it can't 
+    download packages it needs.
+- Change makedist -s to download fuse3 from CentOS instead of EPEL
+    starting with RHEL 8.1.
+- Change makedist to exclude .build-id files.
+- Add "http://grid-wpad/wpad.dat;http://wpad/wpad.dat" to the beginning
+    default Proxy Auto Config URLs.
+
 cvmfsexec-3.0 - 10 April 2020
 - Add singcvmfs command and makedist -s option.
 - Support unprivileged namespace fuse mounts in cvmfsexec on RHEL 7.8.
