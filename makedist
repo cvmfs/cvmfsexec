@@ -154,5 +154,5 @@ done
 echo "./etc/cvmfs/default.local"
 cat >etc/cvmfs/default.local <<!EOF!
 CVMFS_HTTP_PROXY="auto;DIRECT"
-CVMFS_PAC_URLS="http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"
+CVMFS_PAC_URLS="http://grid-wpad/wpad.dat;http://wpad/wpad.dat;http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"
 !EOF!
