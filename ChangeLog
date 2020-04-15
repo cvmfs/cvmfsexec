@@ -5,6 +5,8 @@
 - Change makedist to exclude .build-id files.
 - Add "http://grid-wpad/wpad.dat;http://wpad/wpad.dat" to the beginning
     default Proxy Auto Config URLs.
+- Change singcvmfs to set CVMFS_NFILES in a default.d config file, to
+    avoid showing a cvmfs warning with singularity >= 3.6.
 
 cvmfsexec-3.0 - 10 April 2020
 - Add singcvmfs command and makedist -s option.
