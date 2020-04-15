@@ -24,10 +24,11 @@ do this in 4 different ways:
    everything gets cleanly unmounted.  fusermount is not needed in this
    case.
 4. On systems that have no fusermount nor unprivileged user namespace
-   fuse mounts but do have a setuid installation of singularity >= 3.4,
+   fuse mounts but do have an setuid installation of singularity >= 3.4,
    an entirely separate command in this package `singcvmfs` can mount
    cvmfs repositories inside a container using the `singularity
-   --fusemount` feature.
+   --fusemount` feature.  With singularity >= 3.6 and RHEL >= 7.8 this
+   can also be used with unprivileged singularity.
 
 # Making the cvmfs distribution
 
@@ -138,9 +139,11 @@ mounted but inaccessible.
 
 When a privileged setuid installation of singularity >= 3.4 is
 available, the `singcvmfs` command can be used to mount cvmfs
-repositories inside a container.  The command line interface is
-different than cvmfsexec because it is designed for ease of use by end
-users on a laptop/desktop.
+repositories inside a container.  With singularity >= 3.6 and
+RHEL >= 7.8 or a kernel >= 4.18 this can also be used with an
+unprivileged non-setuid singularity installation.
+The command line interface is different than cvmfsexec because it is
+designed for ease of use by end users on a laptop/desktop.  
 
 Put cvmfs repositories to mount comma-separated in a
 `SINGCVMFS_REPOSITORIES` environment variable.  If a configuration
