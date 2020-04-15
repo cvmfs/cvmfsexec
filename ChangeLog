@@ -1,10 +1,12 @@
+cvmfsexec-3.1 - 15 April 2020
 - Change makedist to fail with better error messages when it can't 
     download packages it needs.
 - Change makedist -s to download fuse3 from EPEL7 when on RHEL8, because
-    the RHEL8.1 fuse3 version is too old.
+    the RHEL8.1 fuse3 version is too old and the fact that it moved to
+    the base OS caused it to be removed from EPEL8.
 - Change makedist to exclude .build-id files.
 - Add "http://grid-wpad/wpad.dat;http://wpad/wpad.dat" to the beginning
-    default Proxy Auto Config URLs.
+    of the default Proxy Auto Config URLs.
 - Change singcvmfs to set CVMFS_NFILES in a default.d config file, to
     avoid showing a cvmfs warning with singularity >= 3.6.
 
