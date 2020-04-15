@@ -1,7 +1,7 @@
 - Change makedist to fail with better error messages when it can't 
     download packages it needs.
-- Change makedist -s to download fuse3 from CentOS instead of EPEL
-    starting with RHEL 8.1.
+- Change makedist -s to download fuse3 from EPEL7 when on RHEL8, because
+    the RHEL8.1 fuse3 version is too old.
 - Change makedist to exclude .build-id files.
 - Add "http://grid-wpad/wpad.dat;http://wpad/wpad.dat" to the beginning
     default Proxy Auto Config URLs.

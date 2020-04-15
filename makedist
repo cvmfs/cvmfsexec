@@ -121,13 +121,13 @@ PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
 
 URLS=""
 FUSE3PKGS=""
-if [ "$EL" -ge 8 ]; then
-    # fuse3 moved from EPEL to the base OS in RHEL 8.1
-    RELEASE="`sed 's/.* release //;s/ .*//' /etc/redhat-release`"
-    FUSE3URL="http://mirror.centos.org/centos-$EL/$RELEASE/BaseOS/$ARCH/os/Packages/"
-else
-    FUSE3URL="http://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages/f/"
+FUSEEL=$EL
+if [ "$EL" -eq 8 ]; then
+    # fuse3 moved from EPEL to the base OS in RHEL 8.1, but it's too
+    #  old of a version :-(.  Use the EL7 packages instead.
+    FUSEEL=7
 fi
+FUSE3URL="http://download.fedoraproject.org/pub/epel/$FUSEEL/$ARCH/Packages/f/"
 if $SING; then
     PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
     FUSE3PKGS="`curl -Ls $FUSE3URL|grep fuse3-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
