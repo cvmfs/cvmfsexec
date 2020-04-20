@@ -1,3 +1,5 @@
+- Change singcvmfs to send syslog messages to log/<reponame>.log
+
 cvmfsexec-3.1 - 15 April 2020
 - Change makedist to fail with better error messages when it can't 
     download packages it needs.

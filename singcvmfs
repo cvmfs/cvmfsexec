@@ -77,6 +77,10 @@ if [ -n "$SINGCVMFS_CVMFSOPTSFILE" ]; then
 fi
 
 echo "CVMFS_NFILES=`ulimit -Hn`" >etc/cvmfs/default.d/00-nfiles.conf
+echo "CVMFS_USYSLOG=/var/log/cvmfs/@fqrn@.log" >etc/cvmfs/default.d/00-usyslog.conf
+LOGDIR=$(dirname $PWD)
+mkdir -p $LOGDIR
+SINGULARITY_BINDPATH="$SINGULARITY_BINDPATH,$LOGDIR/log:/var/log/cvmfs"
 
 for P in `find * ! -type d ! -path '*/doc/*' ! -path 'var/lib/cvmfs/*'| \
         sed 's,/cvmfs/.*,/cvmfs,'|uniq`; do
