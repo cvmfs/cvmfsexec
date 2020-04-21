@@ -14,7 +14,9 @@ do this in 4 different ways:
    `sysctl user.max_user_namespaces` > 0),
    the `cvmfsexec` command can mount cvmfs repositories, map them into
    /cvmfs, and unmount them when it exits.  singularity may even be
-   run unprivileged from cvmfs in this case.  The main disadvantage is
+   run unprivileged from cvmfs from within cvmfsexec (it has to run
+   unprivileged because setuid-root does not work inside a user
+   namespace).  The main disadvantage is
    that if the processes are hard-killed (kill -9), mountpoints are left
    behind and are difficult to clean up.
 3. On systems where unprivileged namespace fuse mounts are available
@@ -104,6 +106,9 @@ not trustworthy, such as user payloads that are invoked with
 `singularity --contain`, then close the $CVMFSEXEC_CMDFD file descriptor
 for those processes.  This can be done in bash with
 `exec {CVMFSEXEC_CMDFD}>&-`.
+
+Note that setuid-root programs do not work inside an unprivileged user
+namepace, so if you use singularity it has to be run unprivileged.
 
 ## Better cvmfsexec operation on newer kernels
 
