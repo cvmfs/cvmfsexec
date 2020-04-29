@@ -150,6 +150,16 @@ for U in $URLS; do
     echo "Extracting $U into $DIST"
     curl -Ls "$U"|rpm2cpio -|cpio -idmv -f "*/.build-id*"
 done
+find * -type l|while read LINK; do
+    LINKDEST="`readlink $LINK`"
+    if [ "${LINKDEST:0:1}" = "/" ]; then
+        # turn full path symlink target into relative path
+        NEWDEST="$(echo $(dirname $LINK)|sed 's,[^/]*,..,g')$LINKDEST"
+        echo "$LINK -> $NEWDEST"
+        rm -f $LINK
+        ln -s $NEWDEST $LINK
+    fi
+done
 
 echo "./etc/cvmfs/default.local"
 cat >etc/cvmfs/default.local <<!EOF!
