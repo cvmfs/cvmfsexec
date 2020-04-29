@@ -22,6 +22,7 @@ usage()
     echo " SINGCVMFS_CVMFSOPTSFILE CVMFS options file (default.local)"
     echo "                           - must set at least CVMFS_HTTP_PROXY"
     echo " SINGCVMFS_SINGOPTS      Extra singularity options"
+    echo " SINGCVMFS_LOGLEVEL      Set to debug to enable singularity & cvmfs debugging"
     exit 1
 } >&2
 
@@ -65,10 +66,27 @@ if [[ ",$REPOS," != *",$CONFIG_REPO,"* ]]; then
     REPOS="$CONFIG_REPO,$REPOS"
 fi
 
+SINGDEBUG=""
+CVMFSDEBUG=""
+EXEC=exec
+DEBUGCONF=$HERE/dist/etc/cvmfs/default.d/00-debug.conf
+if [ "$SINGCVMFS_LOGLEVEL" = "debug" ]; then
+    SINGDEBUG="-vddd"
+    CVMFSDEBUG="-o debug"
+    echo "CVMFS_DEBUGLOG=/var/log/cvmfs/@fqrn@-debug.log" >$DEBUGCONF
+    # would rather not leave this around because it interferes with
+    #  use of cvmfsexec in same directory.
+    EXEC=""
+    trap "rm -f $DEBUGCONF" 0
+else
+    rm -f $DEBUGCONF
+fi
+
 declare -a MOUNT_ARGS
 for R in ${REPOS//,/ }; do
-    MOUNT_ARGS+=(--fusemount "\"container:cvmfs2 $R /cvmfs/$R\"")
+    MOUNT_ARGS+=(--fusemount "\"container:cvmfs2-wrapper $CVMFSDEBUG $R /cvmfs/$R\"")
 done
+SINGULARITY_BINDPATH="$SINGULARITY_BINDPATH,$HERE/cvmfs2-wrapper:/usr/bin/cvmfs2-wrapper"
 
 cd $HERE/dist
 
@@ -93,5 +111,5 @@ CACHEDIR=${SINGCVMFS_CACHEDIR:-$PWD/var/lib/cvmfs}
 
 cd $ORIGPWD
 
-exec singularity run -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
+$EXEC singularity $SINGDEBUG run -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
     "${MOUNT_ARGS[@]}" ${SINGCVMFS_SINGOPTS[@]} $SINGCVMFS_IMAGE "$@"

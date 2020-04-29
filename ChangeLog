@@ -1,4 +1,8 @@
-- Change singcvmfs to send syslog messages to log/<reponame>.log
+- Remove the cvmfs mounting messages in singcvmfs that otherwise start
+    happening with singularity-3.6.
+- Change singcvmfs to send syslog messages to log/<reponame>.log.
+- Add SINGCVMFS_LOGLEVEL=debug which enables debugging for singularity &
+    cvmfs.  The cvmfs debug messages go to log/<reponame>-debug.log.
 
 cvmfsexec-3.1 - 15 April 2020
 - Change makedist to fail with better error messages when it can't 
