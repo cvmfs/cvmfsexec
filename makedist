@@ -56,13 +56,13 @@ case $1 in
         BASENAME=cvmfsexec
         TOOLS="cvmfsexec mountrepo umountrepo"
         SEDOPTS=""
-        NEEDLIB=libcvmfs_fuse.so
-        REQUIRES=makedist
+        NEEDLIB=libfuse.so.2
+        REQUIRES="makedist (without -s)"
         if $SING; then
             BASENAME=singcvmfs
             TOOLS="singcvmfs"
             SEDOPTS="-e s/cvmfsexec/$BASENAME/ -e s/^BASEDIR=.*/BASEDIR=\$HOME/"
-            NEEDLIB=libcvmfs_fuse3.so
+            NEEDLIB=libfuse3.so.3
             REQUIRES="makedist -s"
         fi
         if [ ! -f $DIST/usr/lib*/$NEEDLIB ]; then
@@ -120,19 +120,29 @@ PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
 PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
 
 URLS=""
-FUSE3PKGS=""
-FUSEEL=$EL
+FUSEPKGS=""
+FUSE3EL=$EL
 if [ "$EL" -eq 8 ]; then
+    ELPATH=BaseOS/$ARCH/os
     # fuse3 moved from EPEL to the base OS in RHEL 8.1, but it's too
     #  old of a version :-(.  Use the EL7 packages instead.
-    FUSEEL=7
+    FUSE3EL=7
+else
+    ELPATH=os/$ARCH
 fi
-FUSE3URL="http://download.fedoraproject.org/pub/epel/$FUSEEL/$ARCH/Packages/f/"
 if $SING; then
+    FUSEURL="http://download.fedoraproject.org/pub/epel/$FUSE3EL/$ARCH/Packages/f"
     PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
-    FUSE3PKGS="`curl -Ls $FUSE3URL|grep fuse3-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
-    if [ -z "$FUSE3PKGS" ]; then
-        echo "No fuse3-libs package found from $FUSE3URL" >&2
+    FUSEPKGS="`curl -Ls $FUSEURL|grep fuse3-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
+    if [ -z "$FUSEPKGS" ]; then
+        echo "No fuse3-libs package found from $FUSEURL" >&2
+        exit 1
+    fi
+else
+    FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
+    FUSEPKGS="`curl -Ls $FUSEURL|grep fuse-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
+    if [ -z "$FUSEPKGS" ]; then
+        echo "No fuse-libs package found from $FUSEURL" >&2
         exit 1
     fi
 fi
@@ -140,8 +150,8 @@ fi
 for PKG in $PKGS; do
     URLS="$URLS $URL/$PKG"
 done
-for PKG in $FUSE3PKGS; do
-    URLS="$URLS $FUSE3URL/$PKG"
+for PKG in $FUSEPKGS; do
+    URLS="$URLS $FUSEURL/$PKG"
 done
 
 mkdir $DIST

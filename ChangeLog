@@ -1,3 +1,5 @@
+- Change makedist without -s (that is, for cvmfsexec) to include fuse-libs
+    for systems that do not have it.
 - Change makedist to turn symlinks with full path targets into relative
     paths.  This was preventing singcvmfs from working on systems that
     didn't already have cvmfs installed.
