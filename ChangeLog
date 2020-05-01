@@ -6,6 +6,7 @@ cvmfsexec-4.0 - 1 May 2020
 - Change $SINGCVMFS_LOGLEVEL to only apply to cvmfs debugging.  Instead,
     singularity debugging along with any other singularity global option
     can be passed directly on the command line before the command.
+- Change the -v option of singcvmfs that reported its version to -V.
 - Change the name of $SINGCVMFS_CVMFSOPTSFILE to $SINGCVMFS_OPTSFILE.
 - Change the extraction directory for a self-extracting singcvmfs
     made by makedist -s -o to be .singcvmfs instead of $HOME/.singcvmfs
