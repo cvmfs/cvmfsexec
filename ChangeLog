@@ -1,3 +1,4 @@
+cvmfsexec-4.0 - 1 May 2020
 - Change singcvmfs to directly pass commands that start with exec, run,
     shell, or version to singularity, so it can be used as a drop-in
     replacement for singularity.  When used in this mode, $SINGCVMFS_IMAGE
