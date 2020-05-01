@@ -16,7 +16,7 @@ usage()
     echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
     echo "   directory as the script."
     echo " The -s option makes both operations work for singcvmfs instead"
-    echo "   of cvmfsexec, and files are left in \$HOME/.singcvmfs"
+    echo "   of cvmfsexec, and files are left in .singcvmfs"
     ) >&2
     exit 1
 }
@@ -61,7 +61,7 @@ case $1 in
         if $SING; then
             BASENAME=singcvmfs
             TOOLS="singcvmfs"
-            SEDOPTS="-e s/cvmfsexec/$BASENAME/ -e s/^BASEDIR=.*/BASEDIR=\$HOME/"
+            SEDOPTS="-e s/cvmfsexec/$BASENAME/"
             NEEDLIB=libfuse3.so.3
             REQUIRES="makedist -s"
         fi

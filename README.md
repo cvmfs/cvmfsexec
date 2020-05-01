@@ -73,10 +73,7 @@ makedist -s -o /tmp/singcvmfs
 
 Executing a cvmfsexec file that is created in that way leaves behind a
 .cvmfsexec directory in the directory where it is run from, and running
-a singcvmfs file leaves behind a directory in $HOME/.singcvmfs.  The
-difference is because cvmfsexec is designed with grid jobs as a target
-audience and singcvmfs is designed with laptop/desktop users as a target
-audience, and older HPC systems as a secondary audience.
+a singcvmfs file leaves behind a .singcvmfs directory.
 
 # cvmsexec command
 
@@ -148,17 +145,33 @@ repositories inside a container.  With singularity >= 3.6 and
 RHEL >= 7.8 or a kernel >= 4.18 this can also be used with an
 unprivileged non-setuid singularity installation.
 The command line interface is different than cvmfsexec because it is
-designed for ease of use by end users on a laptop/desktop.  
+designed for ease of use by end users on a laptop/desktop and as a
+drop-in replacement for singularity when it executes containers.
 
 Put cvmfs repositories to mount comma-separated in a
 `SINGCVMFS_REPOSITORIES` environment variable.  If a configuration
-repository is needed it will be automatically mounted.  Put the 
-singularity container path to mount in a
-`SINGCVMFS_IMAGE` environment variable.  The image cannot come from
-cvmfs, but it can come from docker, shub, a local image file, or a
-local "sandbox" unpacked image directory.   Then the usage is
-`singcvmfs [command]` where the default command is $SHELL.
-For example:
+repository is needed it will be automatically mounted.  Then you can use
+singcvmfs exactly like singularity with one of its exec, run, or shell
+commands (note: it cannot read an image from cvmfs).  For example:
+
+```
+$ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
+$ singcvmfs -s exec -cip docker://centos:7 ls /cvmfs
+atlas.cern.ch  config-osg.opensciencegrid.org  grid.cern.ch
+$ singcvmfs ls /cvmfs/atlas.cern.ch
+repo
+```
+The first time you run the above it will take a long time as singularity
+downloads the image from dockerhub and cvmfs mounts the repositories,
+but running it again should be very fast.
+
+Alternatively, to make it easier to execute repeatedly interactively
+from the command line, you can put the singularity container path in a
+`SINGCVMFS_IMAGE` environment variable and leave out the singularity
+command.  The image cannot come from cvmfs, but it can come from docker,
+shub, a local image file, or a local "sandbox" unpacked image directory.
+Then the usage is `singcvmfs [command]` where the default command is
+$SHELL.  For example:
 
 ```
 $ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"

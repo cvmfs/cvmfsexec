@@ -1,3 +1,14 @@
+- Change singcvmfs to directly pass commands that start with exec, run,
+    shell, or version to singularity, so it can be used as a drop-in
+    replacement for singularity.  When used in this mode, $SINGCVMFS_IMAGE
+    is not required.
+- Change $SINGCVMFS_LOGLEVEL to only apply to cvmfs debugging.  Instead,
+    singularity debugging along with any other singularity global option
+    can be passed directly on the command line before the command.
+- Change the name of $SINGCVMFS_CVMFSOPTSFILE to $SINGCVMFS_OPTSFILE.
+- Change the extraction directory for a self-extracting singcvmfs
+    made by makedist -s -o to be .singcvmfs instead of $HOME/.singcvmfs
+
 cvmfsexec-3.2 - 29 April 2020
 - Change makedist without -s (that is, for cvmfsexec) to include fuse-libs
     for systems that do not have it.
