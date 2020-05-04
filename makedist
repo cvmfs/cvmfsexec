@@ -132,7 +132,12 @@ else
 fi
 if $SING; then
     FUSEURL="http://download.fedoraproject.org/pub/epel/$FUSE3EL/$ARCH/Packages/f"
-    PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
+    CVMFSFUSE3="`echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
+    if [ -z "$CVMFSFUSE3" ]; then
+        echo "No cvmfs-fuse3 package found from $URL" >&2
+        exit 1
+    fi
+    PKGS="$PKGS $CVMFSFUSE3"
     FUSEPKGS="`curl -Ls $FUSEURL|grep fuse3-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
     if [ -z "$FUSEPKGS" ]; then
         echo "No fuse3-libs package found from $FUSEURL" >&2
