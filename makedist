@@ -60,7 +60,7 @@ case $1 in
         REQUIRES="makedist (without -s)"
         if $SING; then
             BASENAME=singcvmfs
-            TOOLS="singcvmfs"
+            TOOLS="singcvmfs cvmfs2-wrapper"
             SEDOPTS="-e s/cvmfsexec/$BASENAME/"
             NEEDLIB=libfuse3.so.3
             REQUIRES="makedist -s"

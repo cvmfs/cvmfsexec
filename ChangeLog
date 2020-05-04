@@ -1,4 +1,5 @@
 - Change makedist -s to make sure cvmfs-fuse3 exists
+- Include cvmfs2-wrapper in makedist -s -o self-extracting script
 
 cvmfsexec-4.0 - 1 May 2020
 - Change singcvmfs to directly pass commands that start with exec, run,
