@@ -137,6 +137,13 @@ individual repository use `umountrepo repository.name`.  Make sure that
 all the processes do not get killed or the repositories will remain
 mounted but inaccessible.
 
+## Debugging
+
+Syslog messages from cvmfs go in the `log` subdirectory alongside
+`dist`.  A separate log file is created for each repository.  cvmfs
+debugging logs can also be enabled in the usual way, by setting
+CVMFS_DEBUGLOG in the cvmfs configuration.
+
 ## Running from docker
 
 Docker supports unprivileged user namespaces including unprivileged fuse
@@ -173,8 +180,8 @@ $ singcvmfs ls /cvmfs/atlas.cern.ch
 repo
 ```
 The first time you run the above it will take a long time as singularity
-downloads the image from dockerhub and cvmfs mounts the repositories,
-but running it again should be very fast.
+downloads the image from dockerhub and cvmfs fills its cache, but
+running it again should be very fast.
 
 Alternatively, to make it easier to execute repeatedly interactively
 from the command line, you can put the singularity container path in a
