@@ -137,6 +137,17 @@ individual repository use `umountrepo repository.name`.  Make sure that
 all the processes do not get killed or the repositories will remain
 mounted but inaccessible.
 
+## Running from docker
+
+Docker supports unprivileged user namespaces including unprivileged fuse
+mounts on the kernels that support it, without using the `--privileged`
+option or adding capabilities.  The following set of docker options is
+sufficient:
+
+```
+--security-opt seccomp=unconfined --security-opt systempaths=unconfined --device=/dev/fuse
+```
+
 # singcvmfs command
 
 When a privileged setuid installation of singularity >= 3.4 is
