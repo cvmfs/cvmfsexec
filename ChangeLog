@@ -1,5 +1,7 @@
 - In singcvmfs when cvmfs debugging is enabled, also save the initial
     output of cvmfs2 in the debug log file.
+- On osg el8, get rpms from testing yum repository if they're missing 
+    from the release repository.
 
 cvmfsexec-4.1 - 4 May 2020
 - Change makedist -s to make sure cvmfs-fuse3 exists
