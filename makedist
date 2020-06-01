@@ -47,6 +47,7 @@ if [ "$1" = -s ]; then
     SING=true
     shift
 fi
+DISTTYPE=""
 case $1 in
     -o)
 
@@ -87,6 +88,7 @@ case $1 in
         exit
         ;;
     osg)
+        DISTTYPE=osg
         if [ "$EL" = 6 ]; then
             REL=3.4
         else
@@ -94,6 +96,7 @@ case $1 in
         fi
         URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/$ARCH";;
     egi)
+        DISTTYPE=egi
         if [ "$EL" = 6 ]; then
             OS=sl6
         else
@@ -113,8 +116,15 @@ fi
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 if [ -z "$PKGS" ]; then
-    echo "No cvmfs package found from $URL" >&2
-    exit 1
+    if [ "$DISTTYPE" = osg ] && [ "$EL" = 8 ]; then
+        URL="`echo $URL|sed 's/release/testing/'`"
+        LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
+        PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
+    fi
+    if [ -z "$PKGS" ]; then
+        echo "No cvmfs package found from $URL" >&2
+        exit 1
+    fi
 fi
 PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
 PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
