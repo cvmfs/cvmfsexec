@@ -1,3 +1,4 @@
+cvmfsexec-4.2 - 1 June 2020
 - In singcvmfs when cvmfs debugging is enabled, also save the initial
     output of cvmfs2 in the debug log file.
 - On osg el8, get rpms from testing yum repository if they're missing 
