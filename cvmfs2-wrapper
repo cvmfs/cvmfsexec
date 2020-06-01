@@ -1,7 +1,11 @@
 #!/bin/bash
 # This is used by singcvmfs to execute cvmfs2 inside a container
 
+
 if [ "$1" = "-o" ] && [ "$2" = "debug" ]; then
+    # This redirect is for the initial output of cvmfs2.  Later it
+    #   appends to the same file because of the CVMFS_DEBUGLOG setting.
+    exec >>/var/log/cvmfs/$3-debug.log 2>&1
     if [ "${@:$#}" = "-f" ]; then
         # -f is added by singularity >= 3.6; remove it
         set -- "${@:1:$(($#-1))}"
