@@ -1,5 +1,5 @@
-- Have makedist -o also look for fuse library in dist/lib* in order to
-    support el6.
+- Have makedist -o and mountrepo also look for fuse library in dist/lib* in
+    order to support el6.
 
 cvmfsexec-4.2 - 1 June 2020
 - In singcvmfs when cvmfs debugging is enabled, also save the initial

@@ -111,7 +111,17 @@ mkdir -p $DIST/var/run/cvmfs
 mkdir -p $DIST/cvmfs/$REPO
 if [ -f $DIST/usr/lib/libcvmfs_fuse.so ]; then
     LPATH=$DIST/usr/lib
+    LDPATH=$LPATH
+    if [ ! -f $LPATH/libfuse.so.2 ]; then
+        # for el6
+        LDPATH=$LPATH:$DIST/lib
+    fi
 else
     LPATH=$DIST/usr/lib64
+    LDPATH=$LPATH
+    if [ ! -f $LPATH/libfuse.so.2 ]; then
+        # for el6
+        LDPATH=$LPATH:$DIST/lib64
+    fi
 fi
-LD_LIBRARY_PATH=$LPATH CVMFS_LIBRARY_PATH=$LPATH $DIST/usr/bin/cvmfs2 -o config=$CONFFILE$OPTS $REPO $DIST/cvmfs/$REPO
+LD_LIBRARY_PATH=$LDPATH CVMFS_LIBRARY_PATH=$LPATH $DIST/usr/bin/cvmfs2 -o config=$CONFFILE$OPTS $REPO $DIST/cvmfs/$REPO
