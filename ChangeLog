@@ -1,3 +1,4 @@
+cvmfsexec-4.3 - 23 June 2020
 - Have makedist -o and mountrepo also look for fuse library in dist/lib* in
     order to support el6.
 - Order default WPAD servers to prioritize fnal for osg and cern for
