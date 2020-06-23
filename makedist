@@ -187,7 +187,11 @@ find * -type l|while read LINK; do
 done
 
 echo "./etc/cvmfs/default.local"
-cat >etc/cvmfs/default.local <<!EOF!
-CVMFS_HTTP_PROXY="auto;DIRECT"
-CVMFS_PAC_URLS="http://grid-wpad/wpad.dat;http://wpad/wpad.dat;http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"
-!EOF!
+(echo 'CVMFS_HTTP_PROXY="auto;DIRECT"'
+if [ "$DISTTYPE" = osg ]; then
+    WLCGPACS="http://cernvm-wpad.fnal.gov/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat"
+else
+    WLCGPACS="http://cernvm-wpad.cern.ch/wpad.dat;http://cernvm-wpad.fnal.gov/wpad.dat"
+fi
+echo "CVMFS_PAC_URLS=\"http://grid-wpad/wpad.dat;http://wpad/wpad.dat;$WLCGPACS\""
+) >etc/cvmfs/default.local
