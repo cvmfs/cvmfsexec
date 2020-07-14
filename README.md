@@ -208,3 +208,14 @@ distribution into the container, including the fuse3 libraries.  It
 expects other base system libraries to be available inside the
 container, so if the container uses a different base OS distribution it
 will likely not work unless compatible libraries are in the container.
+
+Cache considerations: by default singcvmfs starts a cache manager for all
+the cvmfs repositories it mounts, which means that caches cannot be shared
+between different invocations of singcvmfs on the same machine.  You can
+select a different cache directory for each invocation by setting
+SINGCVMFS_CACHEDIR.  Alternatively it's possible to use the [cvmfs alien
+cache](https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache)
+feature to share the cache, but you would have to make sure that the
+cache doesn't grow too big and that it gets cleaned up at some point.
+Make sure that caches are not on shared filesystems because they're
+likely to do too many metadata operations.
