@@ -107,6 +107,17 @@ for those processes.  This can be done in bash with
 Note that setuid-root programs do not work inside an unprivileged user
 namepace, so if you use singularity it has to be run unprivileged.
 
+Cache considerations: by default cvmfsexec starts a cache manager
+process for all the cvmfs repositories it mounts, which means only one
+cvmfsexec process can share a cache on a single machine.  The cvmfs
+configuration could be set to use a different path for a cache for
+different invocations (the default is `dist/var/lib/cvmfs`), or it could
+be set to use cvmfs alien cache mode which doesn't use a cache manager,
+but the best approach is to start cvmfsexec from a pilot process and run
+only one pilot per machine.  If possible the cache should be on local
+disk, because otherwise the many file accesses can overwhelm a shared
+filesystem's metadata server.
+
 ## Better cvmfsexec operation on newer kernels
 
 A caveat on older kernels (for example RHEL7.7 and older) is that a
@@ -136,6 +147,9 @@ To unmount all repositories, use `umountrepo -a`, or to unmount an
 individual repository use `umountrepo repository.name`.  Make sure that
 all the processes do not get killed or the repositories will remain
 mounted but inaccessible.
+
+Cache considerations for this mode are the same as with the cvmfsexec
+command.
 
 ## Debugging
 
@@ -211,7 +225,10 @@ will likely not work unless compatible libraries are in the container.
 
 Cache considerations: by default singcvmfs starts a cache manager for all
 the cvmfs repositories it mounts, which means that caches cannot be shared
-between different invocations of singcvmfs on the same machine.  You can
+between different invocations of singcvmfs on the same machine.
+This tends to be more of a problem than with the cvmfsexec command
+because it is more common to run many payload jobs on a machine with
+singularity than it is to run many pilots.  You can
 select a different cache directory for each invocation by setting
 SINGCVMFS_CACHEDIR.  Alternatively it's possible to use the [cvmfs alien
 cache](https://cvmfs.readthedocs.io/en/stable/cpt-configure.html#alien-cache)
