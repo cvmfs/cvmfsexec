@@ -116,7 +116,9 @@ be set to use cvmfs alien cache mode which doesn't use a cache manager,
 but the best approach is to start cvmfsexec from a pilot process and run
 only one pilot per machine.  If possible the cache should be on local
 disk, because otherwise the many file accesses can overwhelm a shared
-filesystem's metadata server.
+filesystem's metadata server.  If the cache directory needs to be 
+changed it can be done by setting CVMFS_CACHE_BASE in
+`dist/etc/cvmfs/default.local`.
 
 ## Better cvmfsexec operation on newer kernels
 
