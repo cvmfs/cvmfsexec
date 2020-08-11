@@ -21,6 +21,15 @@ usage()
     exit 1
 }
 
+distroname() {
+    if [ -f /etc/os-release ]; then
+        source /etc/os-release
+        echo "${ID_LIKE/ */}"
+    elif [ -f /etc/redhat-release ]; then
+        echo "rhel"
+    fi
+}
+
 distroversion() {
     if [ -f /etc/os-release ]; then
         source /etc/os-release
@@ -35,8 +44,13 @@ distroversion() {
     fi
 }
 
+DISTRO="`distroname`"
 EL="`distroversion`"
 ARCH="`arch`"
+
+if [ "$DISTRO" = "suse" ]; then
+    EL=7  # we get some suse stuff from rhel7
+fi
 
 HERE="$(cd `dirname $0` && pwd)"
 
@@ -113,6 +127,7 @@ if [ -d $DIST ]; then
     exit 1
 fi
 
+URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 if [ -z "$PKGS" ]; then
@@ -126,10 +141,19 @@ if [ -z "$PKGS" ]; then
         exit 1
     fi
 fi
+
+if [ "$DISTRO" = "suse" ]; then
+    # now that we can figure out the latest cvmfs version, find the
+    #   corresponding sle cvmfs package instead
+    CVMFSVERSION="`echo "$PKGS"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
+    CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
+    URLS="$CVMFSURL/`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*sle.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
+    PKGS=""
+fi
+
 PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
 PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
 
-URLS=""
 FUSEPKGS=""
 FUSE3EL=$EL
 if [ "$EL" -eq 8 ]; then
@@ -154,10 +178,16 @@ if $SING; then
         exit 1
     fi
 else
-    FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
-    FUSEPKGS="`curl -Ls $FUSEURL|grep fuse-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
+    if [ "$DISTRO" = suse ]; then
+        FUSEURL="http://ewr.edge.kernel.org/opensuse/distribution/openSUSE-stable/repo/oss/x86_64"
+        FUSELIB=libfuse2
+    else
+        FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
+        FUSELIB=fuse-libs
+    fi
+    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
     if [ -z "$FUSEPKGS" ]; then
-        echo "No fuse-libs package found from $FUSEURL" >&2
+        echo "No $FUSELIB package found from $FUSEURL" >&2
         exit 1
     fi
 fi
