@@ -32,6 +32,13 @@ do this in 4 different ways:
    --fusemount` feature.  With singularity >= 3.6 and RHEL >= 7.8 this
    can also be used with unprivileged singularity.
 
+# Supported operating systems
+
+Operating systems currently supported by this package are Red Hat
+Enterprise Linux (versions 6 to 8) and its derivatives (CentOS,
+Scientific Linux) and SUSE Linux Enterprise (version 15) and its
+derivatives (openSUSE Leap).
+
 # Making the cvmfs distribution
 
 All of the ways this package supports unprivileged cvmfs make use of a
@@ -43,7 +50,9 @@ configuration rpm from one of those three sources.
 
 By default a distribution for `cvmfsexec` and `mountrepo/umountrepo` is
 created.  To instead make a distribution for `singcvmfs`, add the `-s`
-makedist option.
+makedist option.  By default the distribution made will match the host
+operating system it runs on, but another distribution can be selected
+with the `-m` option.  See the makedist usage for supported machine types.
 
 To customize any cvmfs configuration settings, put them in
 `dist/etc/cvmfs/default.local`.  In particular you may want to set

@@ -1,3 +1,10 @@
+cvmfsexec-4.4 - 13 August 2020
+- Add support for suse to makedist.
+- Add makedist -m machinetype option to make distributions for
+  non-native machine types.
+- Make sure /usr/sbin is in the cvmfsexec PATH, for finding pivot_root.
+- Prevent cvmfsexec from exiting until repositories are unmounted.
+
 cvmfsexec-4.3 - 23 June 2020
 - Have makedist -o and mountrepo also look for fuse library in dist/lib* in
     order to support el6.
