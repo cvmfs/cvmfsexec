@@ -17,6 +17,9 @@ usage()
 
 HERE="$(cd `dirname $0` && pwd)"
 
+# needed for pivot_root
+PATH=$PATH:/usr/sbin
+
 KERNEL_VERSION="$(uname -r)"
 MAJORKERN=${KERNEL_VERSION/.*/}
 RESTKERN=${KERNEL_VERSION#$MAJORKERN.}
