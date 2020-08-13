@@ -8,9 +8,12 @@
 usage()
 {
     (
-    echo "Usage: makedist [-s] {osg|egi|default}"
+    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default}"
     echo "       makedist [-s] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
+    echo "   The -m option selects machinetype for the distribution."
+    echo "   The default is the current machine.  Supported types:"
+    echo "      rhel6-x86_64, rhel7-x86_64, rhel8-x86_64, suse15-x86_64"
     echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
     echo "   given file name that self extracts and executes cvmfsexec."
     echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
@@ -21,8 +24,24 @@ usage()
     exit 1
 }
 
+SING=false
+MACHTYPE=""
+while true; do
+    if [ "$1" = "-s" ]; then
+        SING=true
+        shift
+    elif [ "$1" = "-m" ]; then
+        MACHTYPE="$2"
+        shift 2
+    else
+        break
+    fi
+done
+
 distroname() {
-    if [ -f /etc/os-release ]; then
+    if [ -n "$MACHTYPE" ]; then
+        echo "$MACHTYPE"|sed 's/[0-9].*//'
+    elif [ -f /etc/os-release ]; then
         source /etc/os-release
         echo "${ID_LIKE/ */}"
     elif [ -f /etc/redhat-release ]; then
@@ -31,7 +50,9 @@ distroname() {
 }
 
 distroversion() {
-    if [ -f /etc/os-release ]; then
+    if [ -n "$MACHTYPE" ]; then
+        echo "$MACHTYPE"|sed 's/^[^0-9]*\([0-9]*\)-.*/\1/'
+    elif [ -f /etc/os-release ]; then
         source /etc/os-release
         echo "${VERSION_ID/.*/}"
     elif [ -f /etc/redhat-release ]; then
@@ -44,10 +65,19 @@ distroversion() {
     fi
 }
 
-DISTRO="`distroname`"
-EL="`distroversion`"
-ARCH="`arch`"
+distroarch() {
+    if [ -n "$MACHTYPE" ]; then
+        echo "${MACHTYPE#*-}"
+    else
+        arch
+    fi
+}
 
+DISTRO="`distroname`"
+VERS="`distroversion`"
+ARCH="`distroarch`"
+
+EL=$VERS
 if [ "$DISTRO" = "suse" ]; then
     EL=7  # we get some suse stuff from rhel7
 fi
@@ -56,15 +86,9 @@ HERE="$(cd `dirname $0` && pwd)"
 
 DIST="$HERE/dist"
 
-SING=false
-if [ "$1" = -s ]; then
-    SING=true
-    shift
-fi
 DISTTYPE=""
 case $1 in
     -o)
-
         if [ $# != 2 ]; then
             usage
         fi
@@ -126,6 +150,12 @@ if [ -d $DIST ]; then
     echo "$DIST already exists" >&2
     exit 1
 fi
+
+SINGMSG=""
+if $SING; then
+    SINGMSG="singcvmfs "
+fi
+echo "Making $SINGMSG$DISTTYPE distribution for $DISTRO$VERS-$ARCH"
 
 URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
