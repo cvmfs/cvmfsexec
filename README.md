@@ -9,7 +9,8 @@ do this in 4 different ways:
 1. On systems where only fusermount is available, the `mountrepo` and
    `umountrepo` commands can be used to mount cvmfs repositories in the
    user's own file space.  That path can then be bindmounted at /cvmfs
-   by a container manager such as singularity.
+   by a container manager such as 
+   [singularity](https://github.com/hpcng/singularity).
 2. On systems where fusermount is available and unprivileged user
    namespaces are enabled, but unprivileged namespace fuse mounts are not
    available (in particular RHEL <=7.7 with
