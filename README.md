@@ -32,7 +32,8 @@ do this in 4 different ways:
    fuse mounts but do have a setuid installation of singularity >= 3.4,
    an entirely separate command in this package `singcvmfs` can mount
    cvmfs repositories inside a container using the `singularity
-   --fusemount` feature.  With singularity >= 3.6 and RHEL >= 7.8 this
+   --fusemount` feature.  With singularity >= 3.6 and RHEL >= 7.8 and
+   unprivileged user namespaces enabled this
    can also be used with unprivileged singularity.
 
 # Supported operating systems
@@ -188,7 +189,9 @@ sufficient:
 When a privileged setuid installation of singularity >= 3.4 is
 available, the `singcvmfs` command can be used to mount cvmfs
 repositories inside a container.  With singularity >= 3.6 and
-RHEL >= 7.8 or a kernel >= 4.18 this can also be used with an
+RHEL >= 7.8 or a kernel >= 4.18
+and unprivileged user namespaces are enabled
+this can also be used with an
 unprivileged non-setuid singularity installation.
 The command line interface is different than cvmfsexec because it is
 designed for ease of use by end users on a laptop/desktop and as a
