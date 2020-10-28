@@ -256,8 +256,11 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         cd $HERE
         # mount the initial repos
         for REPO in $REPOS; do
-            if ! ./mountrepo \$REPO; then
-                exit $?
+            ./mountrepo \$REPO
+            RET="\$?"
+            if [ "\$RET" != 0 ]; then
+                echo "mountrepo \$REPO failed"
+                exit \$RET
             fi
 
             mkdir -p /cvmfs/\$REPO
@@ -305,5 +308,9 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
 
 !EOF-1!
 
+RET="$?"
+
 # wait for background process to clean up
 wait
+
+exit $RET
