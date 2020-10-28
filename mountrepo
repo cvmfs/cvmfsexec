@@ -7,7 +7,6 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-
 usage()
 {
     echo "Usage: mountrepo repo.name" >&2
@@ -49,18 +48,31 @@ fi
 CONFFILE="`mktemp`"
 trap "rm -f $CONFFILE" 0
 
-# Relocate the given files, and substitute a ". ../" with a full path
-#  to the parent directory of the first file.  The latter is a hack for
-#  the EGI configuration repo which uses that idiom, reading a file 
-#  (common.conf) that itself does not need relocation; it is not in any
-#  way a general purpose processor of the bash "source" feature.
+# recursively substitute a ". " or "source " with the contents of the
+#  sourced file. 
+procsource()
+{
+    for FILE; do
+        while read LINE; do
+            case "$LINE" in
+                ". "*) procsource "${LINE/. /}";;
+                "source "*) procsource "${LINE/source /}";;
+                *) echo "$LINE";;
+            esac
+        done <$FILE
+    done
+}
 
+# relocate the given files and process them for sourced files the same way
+#  that cvmfs does
 relocate()
 {
-sed -e "s,^\([^/]*\)/cvmfs,\1$DIST/cvmfs," \
-    -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
-    -e "s,^\([^/]*\)/var,\1$DIST/var," \
-    -e "s,^\. \.\./,. ${1%/*/*}/," $* 2>/dev/null
+    cd ${1%/*}
+    procsource $* 2>/dev/null | \
+        sed -e "s,^\([^/]*\)/cvmfs,\1$DIST/cvmfs," \
+            -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
+            -e "s,^\([^/]*\)/var,\1$DIST/var,"
+    cd -
 }
 
 DOMAIN="`echo "$REPO"|cut -d. -f2-`"
