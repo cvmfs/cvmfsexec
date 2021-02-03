@@ -120,12 +120,21 @@ while [ $# -gt 0 ]; do
 done
 
 SINGCMD=""
+SINGINSTCMD=""
 case "$1" in
     version)
         exec singularity $SINGGLOBALOPTS "$@"
         ;;
     version|exec|run|shell)
         SINGCMD="$1"
+        shift
+        SINGCVMFS_IMAGE="" # just in case it is set
+        ;;
+    instance)
+        SINGCMD="$1"
+        shift
+        # consume subcommand for instance
+        SINGINSTCMD=$1
         shift
         SINGCVMFS_IMAGE="" # just in case it is set
         ;;
@@ -138,6 +147,12 @@ case "$1" in
         ;;
 esac
 
-$EXEC singularity $SINGGLOBALOPTS $SINGCMD \
-    -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
-    "${MOUNT_ARGS[@]}" ${SINGCVMFS_SINGOPTS[@]} $SINGCVMFS_IMAGE "$@"
+if [ "$SINGCMD" = instance -a "$SINGINSTCMD" != start ];
+then
+    $EXEC singularity $SINGGLOBALOPTS $SINGCMD $SINGINSTCMD "$@"
+else
+    $EXEC singularity $SINGGLOBALOPTS $SINGCMD $SINGINSTCMD \
+        -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
+        "${MOUNT_ARGS[@]}" ${SINGCVMFS_SINGOPTS[@]} $SINGCVMFS_IMAGE "$@"
+fi
+
