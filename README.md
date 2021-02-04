@@ -200,9 +200,9 @@ drop-in replacement for singularity when it executes containers.
 Put cvmfs repositories to mount comma-separated in a
 `SINGCVMFS_REPOSITORIES` environment variable.  If a configuration
 repository is needed it will be automatically mounted.  Then you can use
-singcvmfs exactly like singularity with one of its exec, run, or shell
-commands (note: it cannot read an image from cvmfs).  For example, once
-you have [made a singcvmfs distribution](#making-the-cvmfs-distribution)
+singcvmfs exactly like singularity with one of its exec, instance, run,
+or shell commands (note: it cannot read an image from cvmfs).  For example,
+once you have [made a singcvmfs distribution](#making-the-cvmfs-distribution)
 the following should work:
 
 ```

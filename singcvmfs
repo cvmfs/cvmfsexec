@@ -15,11 +15,12 @@ Usage: singcvmfs [-V] [global options] [command]
     global options: singularity global options (prior to its command)
     If command starts with one of these singularity commands
         exec
+        instance
         run
         shell
         version
     then the entire command is passed directly to singularity along
-    with options to mount cvmfs repositories.
+    with options to mount cvmfs repositories when appropiate.
     Otherwise the command is a shell command to run inside the chosen
     container image, which may contain whitespace.
     If command is missing then the shell is run.
