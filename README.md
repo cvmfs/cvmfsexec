@@ -200,9 +200,9 @@ drop-in replacement for singularity when it executes containers.
 Put cvmfs repositories to mount comma-separated in a
 `SINGCVMFS_REPOSITORIES` environment variable.  If a configuration
 repository is needed it will be automatically mounted.  Then you can use
-singcvmfs exactly like singularity with one of its exec, run, or shell
-commands (note: it cannot read an image from cvmfs).  For example, once
-you have [made a singcvmfs distribution](#making-the-cvmfs-distribution)
+singcvmfs exactly like singularity with one of its exec, instance, run,
+or shell commands (note: it cannot read an image from cvmfs).  For example,
+once you have [made a singcvmfs distribution](#making-the-cvmfs-distribution)
 the following should work:
 
 ```
@@ -211,7 +211,17 @@ $ singcvmfs -s exec -cip docker://centos:7 ls /cvmfs
 atlas.cern.ch  config-osg.opensciencegrid.org  grid.cern.ch
 $ singcvmfs ls /cvmfs/atlas.cern.ch
 repo
+
+# or using singularity instances:
+$ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
+$ singcvmfs -s instance start docker://centos:7 myexampleinstance
+$ singcvmfs -s run instance://myexampleinstance ls /cvmfs
+atlas.cern.ch  config-osg.opensciencegrid.org  grid.cern.ch
+$ singcvmfs -s run instance://myexampleinstance ls /cvmfs/atlas.cern.ch
+repo
+$ singcvmfs -s instance stop myexampleinstance
 ```
+
 The first time you run the above it will take a long time as singularity
 downloads the image from dockerhub and cvmfs fills its cache, but
 running it again should be very fast.
