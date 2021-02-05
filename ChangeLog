@@ -1,3 +1,7 @@
+cvmfsexec-4.6 - 5 February 2021
+- Add support for instance commands to singcvmfs.  Contributed by Ben
+  Tovar.
+
 cvmfsexec-4.5 - 28 October 2020
 - Implement fill "source" processing of config files in mountrepo, to
   handle the double sourcing of files recently introduced in the OSG
