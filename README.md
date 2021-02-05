@@ -211,7 +211,17 @@ $ singcvmfs -s exec -cip docker://centos:7 ls /cvmfs
 atlas.cern.ch  config-osg.opensciencegrid.org  grid.cern.ch
 $ singcvmfs ls /cvmfs/atlas.cern.ch
 repo
+
+# or using singularity instances:
+$ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
+$ singcvmfs -s instance start docker://centos:7 myexampleinstance
+$ singcvmfs -s run instance://myexampleinstance ls /cvmfs
+atlas.cern.ch  config-osg.opensciencegrid.org  grid.cern.ch
+$ singcvmfs -s run instance://myexampleinstance ls /cvmfs/atlas.cern.ch
+repo
+$ singcvmfs -s instance stop myexampleinstance
 ```
+
 The first time you run the above it will take a long time as singularity
 downloads the image from dockerhub and cvmfs fills its cache, but
 running it again should be very fast.
