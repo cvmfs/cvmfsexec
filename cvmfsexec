@@ -252,6 +252,11 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
     if $USERFUSE; then
         # mount a new /proc for the new pid space
         mount -t proc proc /proc
+        RET="\$?"
+        if [ "\$RET" != 0 ]; then
+            echo "mount /proc failed"
+            exit \$RET
+        fi
 
         cd $HERE
         # mount the initial repos
