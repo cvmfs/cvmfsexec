@@ -141,8 +141,10 @@ have to be separately unmounted later with `umountrepo` or `fusermount -u`.
 On kernels >= 4.18 (for example RHEL8) or >= 3.10.0-1127 (for example on
 RHEL7.8) the operation changes to do fuse mounts only inside of
 unprivileged user namespaces, which always completely cleans up mounts
-even with kill -9.  This also uses a pid namespace to ensure that all
-fuse processes are always cleaned up when the command exits.
+even with kill -9.  This also normally uses a pid namespace to ensure
+that all fuse processes are always cleaned up when the command exits
+(the exception is when running under docker and kubernetes default
+configurations that "mask" /proc).
 
 $CVMFSMOUNT/$CVMFSUMOUNT still send a request to a parent process to
 mount/umount but it's not the original process, it's an intermediate
