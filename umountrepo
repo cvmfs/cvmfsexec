@@ -57,13 +57,28 @@ else
     set -- $DIST/cvmfs/$1
 fi
 
+if [ "`id -u`" == 0 ]; then
+    # most likely this is actually a "fake" root
+    ISROOT=true
+else
+    ISROOT=false
+fi
+
 for REPO; do
     if $LAZY; then
         echo "Lazily unmounting $REPO"
-        fusermount -uz $REPO
+        if $ISROOT; then
+            umount -l $REPO
+        else
+            fusermount -uz $REPO
+        fi
     else
         echo "Unmounting $REPO"
-        fusermount -u $REPO
+        if $ISROOT; then
+            umount $REPO
+        else
+            fusermount -u $REPO
+        fi
         rmdir $REPO
     fi
 done
