@@ -133,18 +133,30 @@ proccmd()
             echo "$REPO not mounted" >&2
             RET=1
         fi
+    elif [ "$1" == UMOUNTALL ]; then
+        for R in $MOUNTED_REPOS; do
+            proccmd UMOUNTREPO $R >/dev/null
+        done
     else
         echo "Unrecognized command $1" >&2
         RET=1
     fi
-    echo "$RET" >$CVMFSEXEC_WAITFIFO
+    # the fifo gets removed before the UMOUNTALL
+    if [ -f $CVMFSEXEC_WAITFIFO ]; then
+        echo "$RET" >$CVMFSEXEC_WAITFIFO
+    fi
 }
 # this function is needed from within unshare so write it to a file
 declare -f proccmd >$FUNCS
 
 if $USERFUSE; then
-    # use a separate PID namespace to clean up fuse processes
-    UNSHAREOPTS="-pf"
+    if mount|grep -q " /proc/sys "; then
+        # inside of docker or kubernetes with systempaths "masked"
+        UNSHAREOPTS=""
+    else
+        # use a separate PID namespace to always clean up fuse processes
+        UNSHAREOPTS="-pf"
+    fi
     # the fakeroot process will process mount requests
     CMDFIFO2=$CMDFIFO1
 else
@@ -242,6 +254,11 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
             proccmd "\$CMD" "\$PARAM"
         fi
     done <&$STDINCOPYFD {CMDINFD}<$CMDFIFO2
+    # shutting down
+    if $USERFUSE && [ -z "$UNSHAREOPTS" ]; then
+        # automatic cleanup doesn't happen in this case, so unmount all
+        proccmd UMOUNTALL
+    fi
     ) &
     
     # Change to the new root.  Would use chroot but it doesn't work.
@@ -251,12 +268,14 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
     cd $ORIGPWD
 
     if $USERFUSE; then
-        # mount a new /proc for the new pid space
-        mount -t proc proc /proc
-        RET="\$?"
-        if [ "\$RET" != 0 ]; then
-            echo "mount /proc failed"
-            exit \$RET
+        if [ -n "$UNSHAREOPTS" ]; then
+            # mount a new /proc for the new pid space
+            mount -t proc proc /proc
+            RET="\$?"
+            if [ "\$RET" != 0 ]; then
+                echo "mount /proc failed"
+                exit \$RET
+            fi
         fi
 
         cd $HERE
