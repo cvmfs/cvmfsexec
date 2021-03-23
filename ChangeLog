@@ -1,5 +1,11 @@
+cvmfsexec-4.7 - 23 March 2021
 - Check the return code of mount /proc in cvmfsexec and exit immediately
   with a helpful message if it fails.
+- When /proc is "masked" like in the default settings of docker and
+  kubernetes, do not use a separate pid namespace and instead cleanly
+  unmount all the repositories before exiting.
+- If running as fake root inside of umountrepo use umount instead of
+  fusermount -u.
 
 cvmfsexec-4.6 - 5 February 2021
 - Add support for instance commands to singcvmfs.  Contributed by Ben
