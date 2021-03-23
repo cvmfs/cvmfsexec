@@ -115,19 +115,20 @@ proccmd()
         if [[ " $MOUNTED_REPOS " == *" $REPO "* ]]; then
             # is mounted
             if $USERFUSE; then
+                # first remove the bind mount at /cvmfs
                 umount "/cvmfs/$REPO"
                 RET=$?
                 rmdir "/cvmfs/$REPO"
             fi
-            if [ $? == 0 ]; then
+            if [ "$RET" == 0 ]; then
                 cd "$HERE"
                 ./umountrepo "$REPO"
                 RET=$?
                 MOUNTED_REPOS="`echo " $MOUNTED_REPOS "|sed "s/ $REPO / /"`"
                 # remove extra blanks
                 MOUNTED_REPOS="`echo $MOUNTED_REPOS`"
+                cd - >/dev/null
             fi
-            cd - >/dev/null
         else
             echo "$REPO not mounted" >&2
             RET=1
