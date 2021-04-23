@@ -3,7 +3,7 @@
 #   with the singularity --fusemount option.
 # Written by Dave Dykstra March 2020
 
-VERSION=4.7
+VERSION=4.8
 
 ME="`basename $0`"
 

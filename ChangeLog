@@ -1,3 +1,4 @@
+cvmfsexec-4.8 - 23 April 2021
 - When /proc is masked, wait for cleanup to happen before exiting.
 
 cvmfsexec-4.7 - 23 March 2021
