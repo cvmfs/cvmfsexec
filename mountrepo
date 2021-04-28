@@ -29,6 +29,7 @@ if [ -n "$CVMFSEXEC_CMDFD" ] && [ -n "$CVMFSEXEC_WAITFIFO" ]; then
     # Send command to the "parent" process still outside the namespace.
     # "Parent" is in quotes because the linux process tree gets reversed and
     #   it is actually a linux child.  It is a parent environment-wise though.
+    set -e
     echo MOUNTREPO $REPO >&$CVMFSEXEC_CMDFD
     exec {CVMFSEXEC_CMDFD}>&- # close it, no longer needed
     # wait until that process is finished mounting
