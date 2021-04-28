@@ -145,7 +145,7 @@ proccmd()
         RET=1
     fi
     # the fifo gets removed before the UMOUNTALL
-    if [ -f $CVMFSEXEC_WAITFIFO ]; then
+    if [ -e $CVMFSEXEC_WAITFIFO ]; then
         echo "$RET" >$CVMFSEXEC_WAITFIFO
     fi
 }
