@@ -13,8 +13,9 @@ VERSION=4.9
 
 usage()
 {
-    echo "Usage: cvmfsexec [-v] [repo ...] -- [command]" >&2
+    echo "Usage: cvmfsexec [-vN] [repo ...] -- [command]" >&2
     echo "       -v:   print current version and exit" >&2
+    echo "       -N:   disable the option of nesting [u]mountrepo commands" >&2
     exit 1
 }
 
@@ -54,19 +55,22 @@ exec {STDINCOPYFD}<&0
 
 ORIGPWD=$PWD
 
-if [ "$1" != "--" ]; then
-    while getopts "v" OPTION; do
-        case $OPTION in
-            v)  echo "$VERSION"
-                exit
-                ;;
-            ?)  shift $(($OPTIND-2))
-                usage
-                ;;
-        esac
-    done
-    shift $(($OPTIND-1))
-fi
+NONESTING=false
+# can't use OPTIND because it can't distinguish between -- there or missing
+NOPTS=0
+while getopts "vN" OPTION; do
+    let NOPTS+=1
+    case $OPTION in
+        v)  echo "$VERSION"
+            exit
+            ;;
+        N)  NONESTING=true
+            ;;
+        \?) usage
+            ;;
+    esac
+done
+shift $NOPTS
 
 REPOS=""
 for ARG; do
@@ -322,9 +326,6 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         #PS4='c\$$+ '
         # now in the user namespace
 
-        export -n STDINCOPYFD
-        export CVMFSMOUNT="$HERE/mountrepo"
-        export CVMFSUMOUNT="$HERE/umountrepo"
         if [ "$CMDFIFO1" == "$CMDFIFO2" ]; then
             echo "PID \$$" >&\$CVMFSEXEC_CMDFD
         else
@@ -332,6 +333,14 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
             echo "PID \$$" >$CMDFIFO2
         fi
         read X <$WAITFIFO2
+
+        if $NONESTING; then
+            unset CVMFSEXEC_CMDFD
+            unset CVMFSEXEC_WAITFIFO
+        else
+            export CVMFSMOUNT="$HERE/mountrepo"
+            export CVMFSUMOUNT="$HERE/umountrepo"
+        fi
 
         if [ \$$ -eq 1 ]; then
             # Leave this bash running as PID 1, because most other
@@ -345,6 +354,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         else
             EXEC=exec
         fi
+        export -n STDINCOPYFD
         \$EXEC "\$@" <&\$STDINCOPYFD {STDINCOPYFD}<&-
 !EOF-2!
 

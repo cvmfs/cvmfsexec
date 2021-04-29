@@ -104,14 +104,15 @@ mounted at /cvmfs and automatically unmounted upon exit, use
 is $SHELL.  It will automatically mount the configuration repository if
 one is defined.  
 
-Inside the command you can mount additional repositories by using
+Unless disabled with the `-N` option,
+inside the command you can mount additional repositories by using
 `$CVMFSMOUNT repository.name`.  Since the mounts have to happen outside
 the user namespace, it actually sends a message to the original process
 to mount, and makes the current process wait until completion.
 Repositories that are already mounted are ignored.  You can also unmount
 repositories from within the command with `$CVMFSUMOUNT repository.name`.
-
-If you invoke additional processes within the original process that are
+If you want to use this feature and also
+invoke additional processes within the original process that are
 not trustworthy, such as user payloads that are invoked with
 `singularity --contain`, then close the $CVMFSEXEC_CMDFD file descriptor
 for those processes.  This can be done in bash with
