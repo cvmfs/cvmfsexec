@@ -1,3 +1,6 @@
+cvmfsexec-4.10 - 29 April 2021
+- Add -N option.
+
 cvmfsexec-4.9 - 28 April 2021
 - Fix bug introduced in 4.7 that caused mountrepo inside of cvmfsexec to
   hang after mounting.
