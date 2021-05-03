@@ -1,3 +1,7 @@
+cvmfsexec-4.11 - 3 May 2021
+- Complete the implementation of -N by closing CVMFSEXEC_CMDFD.
+- Avoid hangs when using -N while systempaths are masked.
+
 cvmfsexec-4.10 - 29 April 2021
 - Add -N option.
 
