@@ -1,3 +1,6 @@
+- Change mountrepo to avoid editing directory names that begin with "/cvmfs"
+  but are longer, for example if someone names something "/cvmfsexec".
+
 cvmfsexec-4.11 - 3 May 2021
 - Complete the implementation of -N by closing CVMFSEXEC_CMDFD.
 - Avoid hangs when using -N while systempaths are masked.

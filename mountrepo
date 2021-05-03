@@ -70,7 +70,8 @@ relocate()
 {
     cd ${1%/*}
     procsource $* 2>/dev/null | \
-        sed -e "s,^\([^/]*\)/cvmfs,\1$DIST/cvmfs," \
+        sed -e "s,^\([^/]*\)/cvmfs$,\1$DIST/cvmfs," \
+            -e "s,^\([^/]*\)/cvmfs/,\1$DIST/cvmfs/," \
             -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
             -e "s,^\([^/]*\)/var,\1$DIST/var,"
     cd -
