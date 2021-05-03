@@ -335,6 +335,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         read X <$WAITFIFO2
 
         if $NONESTING; then
+            exec {CVMFSEXEC_CMDFD}>&-
             unset CVMFSEXEC_CMDFD
             unset CVMFSEXEC_WAITFIFO
         else
