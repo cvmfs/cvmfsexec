@@ -98,6 +98,12 @@ MOUNTED_REPOS=""
 # function to process mount/umount commands from child processes
 proccmd()
 {
+    if [ "$1" = "-n" ]; then
+        NOTIFY=false
+        shift
+    else
+        NOTIFY=true
+    fi
     REPO="$2"
     RET=0
     if [ "$1" == MOUNTREPO ]; then
@@ -142,14 +148,13 @@ proccmd()
         fi
     elif [ "$1" == UMOUNTALL ]; then
         for R in $MOUNTED_REPOS; do
-            proccmd UMOUNTREPO $R >/dev/null
+            proccmd -n UMOUNTREPO $R >/dev/null
         done
     else
         echo "Unrecognized command $1" >&2
         RET=1
     fi
-    # the fifo gets removed before the UMOUNTALL
-    if [ -e $CVMFSEXEC_WAITFIFO ]; then
+    if $NOTIFY; then
         echo "$RET" >$CVMFSEXEC_WAITFIFO
     fi
 }
@@ -266,7 +271,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
     # shutting down
     if $USERFUSE && [ -z "$UNSHAREOPTS" ]; then
         # automatic cleanup doesn't happen in this case, so unmount all
-        proccmd UMOUNTALL
+        proccmd -n UMOUNTALL
     fi
     ) &
     
