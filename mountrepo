@@ -56,8 +56,8 @@ procsource()
     for FILE; do
         while read LINE; do
             case "$LINE" in
-                ". "*) procsource "${LINE/. /}";;
-                "source "*) procsource "${LINE/source /}";;
+                ". "*) eval procsource "${LINE/. /}";;
+                "source "*) eval procsource "${LINE/source /}";;
                 *) echo "$LINE";;
             esac
         done <$FILE
@@ -74,14 +74,19 @@ relocate()
             -e "s,^\([^/]*\)/cvmfs/,\1$DIST/cvmfs/," \
             -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
             -e "s,^\([^/]*\)/var,\1$DIST/var,"
-    cd -
+    cd - >/dev/null
 }
 
 DOMAIN="`echo "$REPO"|cut -d. -f2-`"
 (
+CONFIG_REPO="`sed -n 's/^CVMFS_CONFIG_REPOSITORY=//p' $DIST/etc/cvmfs/default.d/*.conf`"
+# these are used in some configuration repository includes, set them
+#   for procsource
+CVMFS_CONFIG_REPOSITORY=$CONFIG_REPO
+CVMFS_MOUNT_DIR=$DIST/cvmfs
+
 relocate $DIST/etc/cvmfs/default.conf
 relocate $DIST/etc/cvmfs/default.d/*.conf
-CONFIG_REPO="`sed -n 's/^CVMFS_CONFIG_REPOSITORY=//p' $DIST/etc/cvmfs/default.d/*.conf`"
 if [ "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/default.conf
 fi
@@ -113,6 +118,9 @@ if [ "$REPO" != "$CONFIG_REPO" ]; then
 fi
 relocate $DIST/etc/cvmfs/config.d/$REPO.conf
 relocate $DIST/etc/cvmfs/config.d/$REPO.local
+
+# this is for finding an authz helper
+echo CVMFS_AUTHZ_CVMFS_DIST=$DIST
 
 ) > $CONFFILE
 
