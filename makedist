@@ -229,8 +229,16 @@ for PKG in $FUSEPKGS; do
     URLS="$URLS $FUSEURL/$PKG"
 done
 
-mkdir $DIST
+mkdir -p $DIST/etc
 cd $DIST
+
+# make an os-release subset for repository configs that need that,
+#  in particular for osgstorage-auth.conf
+cat >etc/os-release <<!EOF!
+ID_LIKE="$DISTRO"
+VERSION_ID="$VERS"
+!EOF!
+
 for U in $URLS; do
     echo "Extracting $U into $DIST"
     curl -Ls "$U"|rpm2cpio -|cpio -idmv -f "*/.build-id*"

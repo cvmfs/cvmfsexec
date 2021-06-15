@@ -1,5 +1,9 @@
+cvmfsexec-4.12 - 15 June 2021
 - Change mountrepo to avoid editing directory names that begin with "/cvmfs"
   but are longer, for example if someone names something "/cvmfsexec".
+- Suport mounting ligo.osgstorage.org.  (Also needs changes in config
+  repo and updates to cvmfs that are now in nightly builds and will be
+  in cvmfs-2.8.2).
 
 cvmfsexec-4.11 - 3 May 2021
 - Complete the implementation of -N by closing CVMFSEXEC_CMDFD.
