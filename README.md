@@ -1,7 +1,8 @@
 # cvmfsexec package
 
-Whenever possible it is best to install standard cvmfs from native OS
-packages, but sometimes that is not an option.
+Whenever possible it is best to install standard
+[cvmfs](https://cernvm.cern.ch/fs/) from native OS packages, but
+sometimes that is not an option.
 This package is for mounting cvmfs as an unprivileged user, without the
 cvmfs package being installed by a system administrator.  The package can
 do this in 4 different ways:
