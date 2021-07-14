@@ -39,9 +39,9 @@ do this in 4 different ways:
 # Supported operating systems
 
 Operating systems currently supported by this package are Red Hat
-Enterprise Linux (versions 6 to 8) and its derivatives (CentOS,
-Scientific Linux) and SUSE Linux Enterprise (version 15) and its
-derivatives (openSUSE Leap).
+Enterprise Linux (versions 7 and 8) and its derivatives (CentOS,
+Scientific Linux, Rocky Linux) and SUSE Linux Enterprise (version 15)
+and its derivatives (openSUSE Leap).
 
 # Making the cvmfs distribution
 
