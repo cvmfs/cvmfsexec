@@ -69,11 +69,12 @@ procsource()
 relocate()
 {
     cd ${1%/*}
+    # do /var first in case $DIST begins with /var
     procsource $* 2>/dev/null | \
-        sed -e "s,^\([^/]*\)/cvmfs$,\1$DIST/cvmfs," \
-            -e "s,^\([^/]*\)/cvmfs/,\1$DIST/cvmfs/," \
+        sed -e "s,^\([^/]*\)/var,\1$DIST/var," \
             -e "s,^\([^/]*\)/etc,\1$DIST/etc," \
-            -e "s,^\([^/]*\)/var,\1$DIST/var,"
+            -e "s,^\([^/]*\)/cvmfs$,\1$DIST/cvmfs," \
+            -e "s,^\([^/]*\)/cvmfs/,\1$DIST/cvmfs/,"
     cd - >/dev/null
 }
 
