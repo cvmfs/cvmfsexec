@@ -1,3 +1,6 @@
+cvmfsexec-4.14 - 17 August 2021
+- Exclude 32bit fuse library from suse distribution
+
 cvmfsexec-4.13 - 17 August 2021
 - Change mountrepo to edit directory names starting with /var first, in
   case the working directory begins with /var.

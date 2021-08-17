@@ -215,7 +215,7 @@ else
         FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
         FUSELIB=fuse-libs
     fi
-    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
+    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'|grep -v 32bit`"
     if [ -z "$FUSEPKGS" ]; then
         echo "No $FUSELIB package found from $FUSEURL" >&2
         exit 1
