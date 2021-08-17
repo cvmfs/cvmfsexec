@@ -1,3 +1,7 @@
+cvmfsexec-4.13 - 17 August 2021
+- Change mountrepo to edit directory names starting with /var first, in
+  case the working directory begins with /var.
+
 cvmfsexec-4.12 - 15 June 2021
 - Change mountrepo to avoid editing directory names that begin with "/cvmfs"
   but are longer, for example if someone names something "/cvmfsexec".
