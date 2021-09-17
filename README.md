@@ -197,7 +197,7 @@ When a privileged setuid installation of singularity >= 3.4 is
 available, the `singcvmfs` command can be used to mount cvmfs
 repositories inside a container.  With singularity >= 3.6 and
 RHEL >= 7.8 or a kernel >= 4.18
-and unprivileged user namespaces are enabled
+with unprivileged user namespaces enabled
 this can also be used with an
 unprivileged non-setuid singularity installation.
 The command line interface is different than cvmfsexec because it is
