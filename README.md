@@ -191,6 +191,14 @@ sufficient:
 --security-opt seccomp=unconfined --security-opt systempaths=unconfined --device=/dev/fuse
 ```
 
+If you have no need for running any setuid executables in docker then
+you can improve security further by adding:
+```
+--security-opt no-new-privileges
+```
+Singularity always has the equivalent protection enabled for the
+containers it runs.
+
 # singcvmfs command
 
 When a privileged setuid installation of singularity >= 3.4 is
