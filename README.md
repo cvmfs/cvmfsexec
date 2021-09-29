@@ -222,10 +222,12 @@ the following should work:
 
 ```
 $ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
-$ singcvmfs -s exec -cip docker://centos:7 ls /cvmfs
+$ singcvmfs -s exec -cip docker://centos:7 bash
+Singularity> ls /cvmfs
 atlas.cern.ch  config-osg.opensciencegrid.org  grid.cern.ch
-$ singcvmfs ls /cvmfs/atlas.cern.ch
+Singularity> ls /cvmfs/atlas.cern.ch
 repo
+Singularity> exit
 
 # or using singularity instances:
 $ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
