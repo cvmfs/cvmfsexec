@@ -1,3 +1,7 @@
+cvmfsexec-4.15 - 16 December 2021
+- Avoid using new pid namespace also if /proc/device is mounted, as
+  happens under docker with --gpus
+
 cvmfsexec-4.14 - 17 August 2021
 - Exclude 32bit fuse library from suse distribution
 
