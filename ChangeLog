@@ -1,3 +1,6 @@
+cvmfsexec-4.16 - 21 December 2021
+- Change that to /proc/driver, not /proc/device
+
 cvmfsexec-4.15 - 16 December 2021
 - Avoid using new pid namespace also if /proc/device is mounted, as
   happens under docker with --gpus
