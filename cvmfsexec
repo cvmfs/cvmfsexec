@@ -9,7 +9,7 @@
 #set -x
 #PS4='c$$+ '
 
-VERSION=4.15
+VERSION=4.16
 
 usage()
 {
@@ -162,7 +162,7 @@ proccmd()
 declare -f proccmd >$FUNCS
 
 if $USERFUSE; then
-    if mount|egrep -q " /proc/(sys |device)"; then
+    if mount|egrep -q " /proc/(sys |driver)"; then
         # inside of docker or kubernetes with systempaths "masked"
         # or using docker --gpus
         UNSHAREOPTS=""
