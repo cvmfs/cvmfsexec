@@ -215,7 +215,7 @@ else
         if [ "$EL" -lt 8 ]; then
             FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
         elif [ "$EL" -eq 8 ]; then
-            FUSEURL="https://download.rockylinux.org/pub/rocky/$EL/$ELPATH/Packages"
+            FUSEURL="https://download.rockylinux.org/pub/rocky/$EL/$ELPATH/Packages/f"
         else
             FUSEURL="http://mirror.stream.centos.org/$EL-stream/BaseOS/$arch/os/Packages"
             # Note: fuse3 not in 9-stream yet so this is just a placeholder
