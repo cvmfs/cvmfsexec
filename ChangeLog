@@ -1,3 +1,7 @@
+cvmfsexec-4.17 - 10 February 2022
+- Change makedist on el8 to download from Rocky Linux repository instead
+  of CentOS.  Also add el9 to download from CentOS 9 Stream.
+
 cvmfsexec-4.16 - 21 December 2021
 - Change that to /proc/driver, not /proc/device
 
