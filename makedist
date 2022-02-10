@@ -212,7 +212,14 @@ else
         FUSEURL="http://ewr.edge.kernel.org/opensuse/distribution/openSUSE-stable/repo/oss/x86_64"
         FUSELIB=libfuse2
     else
-        FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
+        if [ "$EL" -lt 8 ]; then
+            FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
+        elif [ "$EL" -eq 8 ]; then
+            FUSEURL="https://download.rockylinux.org/pub/rocky/$EL/$ELPATH/Packages/f"
+        else
+            FUSEURL="http://mirror.stream.centos.org/$EL-stream/BaseOS/$arch/os/Packages"
+            # Note: fuse3 not in 9-stream yet so this is just a placeholder
+        fi
         FUSELIB=fuse-libs
     fi
     FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'|grep -v 32bit`"
