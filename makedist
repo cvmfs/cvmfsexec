@@ -130,7 +130,7 @@ case $1 in
         if [ "$EL" = 6 ]; then
             REL=3.4
         else
-            REL=3.5
+            REL=3.6
         fi
         URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/$ARCH";;
     egi)
