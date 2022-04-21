@@ -1,3 +1,6 @@
+cvmfsexec-4.18 - 10 April 2022
+- Change makedist osg to use osg3.6 instead of osg3.5
+
 cvmfsexec-4.17 - 10 February 2022
 - Change makedist on el8 to download from Rocky Linux repository instead
   of CentOS.  Also add el9 to download from CentOS 9 Stream.
