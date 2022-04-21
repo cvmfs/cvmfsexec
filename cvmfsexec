@@ -9,7 +9,7 @@
 #set -x
 #PS4='c$$+ '
 
-VERSION=4.17
+VERSION=4.18
 
 usage()
 {
