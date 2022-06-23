@@ -1,3 +1,11 @@
+cvmfsexec-4.19 - 23 June 2022
+- Add rhel8-ppc64le supported type in makedist.  Does not include support
+  for authenticated mounts because of no cvmfs-x509-helper.
+- Switch to Almalinux for rhel8-x86_64 fuse-libs (because Rocky doesn't
+  have ppc64le) in makedist
+- Have makedist abort with clear error if not using one of the supported
+  machine types
+
 cvmfsexec-4.18 - 10 April 2022
 - Change makedist osg to use osg3.6 instead of osg3.5
 
