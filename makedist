@@ -5,6 +5,8 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
+SUPPORTEDTYPES="rhel6-x86_64 rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
+
 usage()
 {
     (
@@ -13,7 +15,7 @@ usage()
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
     echo "   The default is the current machine.  Supported types:"
-    echo "      rhel6-x86_64, rhel7-x86_64, rhel8-x86_64, suse15-x86_64"
+    echo "      $SUPPORTEDTYPES"
     echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
     echo "   given file name that self extracts and executes cvmfsexec."
     echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
@@ -43,7 +45,12 @@ distroname() {
         echo "$MACHTYPE"|sed 's/[0-9].*//'
     elif [ -f /etc/os-release ]; then
         source /etc/os-release
-        echo "${ID_LIKE/ */}"
+        case " $ID $ID_LIKE " in
+            *" rhel "*) echo rhel;;
+            *" suse "*) echo suse;;
+            *)  echo "Operating system in /etc/os-release not supported" >&2
+                exit 2;;
+        esac
     elif [ -f /etc/redhat-release ]; then
         echo "rhel"
     fi
@@ -76,6 +83,15 @@ distroarch() {
 DISTRO="`distroname`"
 VERS="`distroversion`"
 ARCH="`distroarch`"
+
+MACHTYPE=$DISTRO$VERS-$ARCH
+
+if [[ " $SUPPORTEDTYPES " != *" $MACHTYPE "* ]]; then
+    echo "$MACHTYPE not a supported machine type" >&2
+    echo "Supported types are:" >&2
+    echo "  $SUPPORTEDTYPES" >&2
+    exit 1
+fi
 
 EL=$VERS
 if [ "$DISTRO" = "suse" ]; then
@@ -126,25 +142,24 @@ case $1 in
         exit
         ;;
     osg)
-        DISTTYPE=osg
         if [ "$EL" = 6 ]; then
             REL=3.4
         else
             REL=3.6
         fi
-        URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/$ARCH";;
+        URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/x86_64";;
     egi)
-        DISTTYPE=egi
         if [ "$EL" = 6 ]; then
             OS=sl6
         else
             OS=centos$EL
         fi
-        URL="http://repository.egi.eu/sw/production/umd/4/$OS/$ARCH/updates";;
+        URL="http://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default)
-        URL="http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/$ARCH";;
+        URL="http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
     *) usage;;
 esac
+DISTTYPE=$1
 
 if [ -d $DIST ]; then
     echo "$DIST already exists" >&2
@@ -155,12 +170,36 @@ SINGMSG=""
 if $SING; then
     SINGMSG="singcvmfs "
 fi
-echo "Making $SINGMSG$DISTTYPE distribution for $DISTRO$VERS-$ARCH"
+echo "Making $SINGMSG$DISTTYPE distribution for $MACHTYPE"
 
 URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
-PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
-if [ -z "$PKGS" ]; then
+INCLUDEHELPER=true
+if [ "$ARCH" = "ppc64le" ]; then
+    # There's no cvmfs-x509-helper yet for this architecture, and 
+    #  we're looking x86_64 version repositories for the config rpm
+    INCLUDEHELPER=false
+    # Grab cvmfs package from copr instead, using yumdownloader to calculate
+    #  the URL
+    TMPF=$(mktemp)
+    cat >$TMPF <<!EOF!
+[arepo]
+name=arepo
+baseurl=https://download.copr.fedorainfracloud.org/results/dwd/cvmfs/epel-$EL-$ARCH/
+!EOF!
+    URLS="$(yumdownloader -c $TMPF --disablerepo='*' --enablerepo=arepo --archlist=$ARCH --urls cvmfs|while read LINE; do
+            if [[ "$LINE" == http* ]]; then
+                echo "$LINE"
+            else
+                echo "$LINE" >&2
+            fi
+        done)"
+    PKGS=""
+    rm -f $TMPF
+else
+    PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
+fi
+if [ -z "$PKGS" ] && [ -z "$URLS" ]; then
     if [ "$DISTTYPE" = osg ] && [ "$EL" = 8 ]; then
         URL="`echo $URL|sed 's/release/testing/'`"
         LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
@@ -181,8 +220,10 @@ if [ "$DISTRO" = "suse" ]; then
     PKGS=""
 fi
 
-PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$1-[0-9]"|tail -1`"
-PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
+PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
+if $INCLUDEHELPER; then
+    PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
+fi
 
 FUSEPKGS=""
 FUSE3EL=$EL
@@ -215,7 +256,7 @@ else
         if [ "$EL" -lt 8 ]; then
             FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
         elif [ "$EL" -eq 8 ]; then
-            FUSEURL="https://download.rockylinux.org/pub/rocky/$EL/$ELPATH/Packages/f"
+            FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
         else
             FUSEURL="http://mirror.stream.centos.org/$EL-stream/BaseOS/$arch/os/Packages"
             # Note: fuse3 not in 9-stream yet so this is just a placeholder
