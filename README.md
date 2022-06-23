@@ -42,7 +42,9 @@ do this in 4 different ways:
 Operating systems currently supported by this package are Red Hat
 Enterprise Linux (versions 7 and 8) and its derivatives (CentOS,
 Scientific Linux, Rocky Linux) and SUSE Linux Enterprise (version 15)
-and its derivatives (openSUSE Leap).
+and its derivatives (openSUSE Leap). 
+Those are all supported on the x86_64 architecture, and RHEL8 is also
+supported on the ppc64le architecture.
 
 # Making the cvmfs distribution
 
