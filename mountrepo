@@ -102,6 +102,10 @@ if ! grep -q "^CVMFS_USYSLOG=" $DEFLOCAL 2>/dev/null; then
     mkdir -p $HERE/log
     echo "CVMFS_USYSLOG=$HERE/log/$REPO.log"
 fi
+if ! grep -q "^CVMFS_CACHE_BASE=" $DEFLOCAL 2>/dev/null && [ -d /e2fs ]; then
+    mkdir -p /e2fs/cvmfscache
+    echo "CVMFS_CACHE_BASE=/e2fs/cvmfscache"
+fi
 
 if [ "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/domain.d/$DOMAIN.conf

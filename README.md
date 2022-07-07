@@ -42,9 +42,8 @@ do this in 4 different ways:
 Operating systems currently supported by this package are Red Hat
 Enterprise Linux (versions 7 and 8) and its derivatives (CentOS,
 Scientific Linux, Rocky Linux) and SUSE Linux Enterprise (version 15)
-and its derivatives (openSUSE Leap). 
-Those are all supported on the x86_64 architecture, and RHEL8 is also
-supported on the ppc64le architecture.
+and its derivatives (openSUSE Leap).  All of those support the
+x86_64 architecture, and RHEL8 also supports ppc64le.
 
 # Making the cvmfs distribution
 
@@ -66,8 +65,9 @@ To customize any cvmfs configuration settings, put them in
 CVMFS_HTTP_PROXY, although the default is to use WLCG Web Proxy Auto
 Discovery.  You may also want to set CVMFS_QUOTA_LIMIT, otherwise the
 default is 4000 MB.  The default CVMFS_CACHE_BASE for the cache
-shared between the cvmfs repository is in under the dist directory,
-`dist/var/lib/cvmfs`.  Make sure that the cache does not get shared
+shared between the cvmfs repository is under the dist directory,
+`dist/var/lib/cvmfs`, unless the `-m` option is used to add an e2fs
+filesystem (details below).  Make sure that the cache does not get shared
 between multiple machines.
 
 ## Self-contained distribution
@@ -134,11 +134,41 @@ but the best approach is to start cvmfsexec from a pilot process and run
 only one pilot per machine.  If possible the cache should be on local
 disk, because otherwise the many file accesses can overwhelm a shared
 filesystem's metadata server.  If there is no local disk the next best
-option is to mount a loopback filesystem separately for each worker
+option is to mount a filesystem separately for each worker
 node from a big enough file on the shared filesystem, or alternatively
 a RAM disk on the local node if there is sufficient RAM.
-If the cache directory needs to be changed that can be done by setting
-CVMFS_CACHE_BASE in `dist/etc/cvmfs/default.local`.
+The `-m` option (described in the next section) can mount that separate
+scratch filesystem for you in the cvmfsexec namespace.
+Otherwise, if the cache directory needs to be changed that can be done
+by setting CVMFS_CACHE_BASE in `dist/etc/cvmfs/default.local`.
+
+## Optionally mount a scratch filesystem
+
+If there is no local disk available, cvmfsexec can mount a scratch
+ext2/3/4 filesystem with the `-m` option, using the fuse2fs command.
+The filesystem will appear in the cvmfsexec namespace at `/e2fs`.
+If you have not set CVMFS_CACHE_BASE in `dist/etc/cvmfs/default.local`
+then this filesystem will automatically be used for cvmfs cache, and
+it can also be used as scratch workspace for jobs.
+
+Make sure that there is a unique file for each running copy of cvmfsexec.
+Create the file with commands like this:
+```
+dd if=/dev/zero of=scratch.img conv=sparse bs=1G count=6
+mkfs.ext3 scratch.img
+```
+Choose a count of the number of gigabytes you want.  The default cache
+size is 4000 megabytes, and the recommendation is to reserve an
+additional 1000 megabytes plus 20%, so make it at least 6 gigabytes
+and add any additional space you want to use as scratch workspace.
+It's a sparse file so there's little penalty for creating it bigger if
+the space is never used.
+Then start cvmfsexec with `-m`.  For example, to mount only the
+cvmfs configuration repository and run a shell do
+```
+cvmfsexec -m scratch.img --`
+```
+Then check out `/e2fs`.
 
 ## Better cvmfsexec operation on newer kernels
 

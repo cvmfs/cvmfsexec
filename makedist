@@ -172,6 +172,23 @@ if $SING; then
 fi
 echo "Making $SINGMSG$DISTTYPE distribution for $MACHTYPE"
 
+getcoprurl() {
+    typeset TMPF=$(mktemp)
+    cat >$TMPF <<!EOF!
+[arepo]
+name=arepo
+baseurl=https://download.copr.fedorainfracloud.org/results/dwd/$1/epel-$EL-$ARCH/
+!EOF!
+    yumdownloader -c $TMPF --disablerepo='*' --enablerepo=arepo --archlist=$ARCH --urls $1|while read LINE; do
+            if [[ "$LINE" == http* ]]; then
+                echo "$LINE"
+            else
+                echo "$LINE" >&2
+            fi
+        done
+    rm -f $TMPF
+}
+
 URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 INCLUDEHELPER=true
@@ -181,21 +198,8 @@ if [ "$ARCH" = "ppc64le" ]; then
     INCLUDEHELPER=false
     # Grab cvmfs package from copr instead, using yumdownloader to calculate
     #  the URL
-    TMPF=$(mktemp)
-    cat >$TMPF <<!EOF!
-[arepo]
-name=arepo
-baseurl=https://download.copr.fedorainfracloud.org/results/dwd/cvmfs/epel-$EL-$ARCH/
-!EOF!
-    URLS="$(yumdownloader -c $TMPF --disablerepo='*' --enablerepo=arepo --archlist=$ARCH --urls cvmfs|while read LINE; do
-            if [[ "$LINE" == http* ]]; then
-                echo "$LINE"
-            else
-                echo "$LINE" >&2
-            fi
-        done)"
+    URLS="$(getcoprurl cvmfs)"
     PKGS=""
-    rm -f $TMPF
 else
     PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 fi
@@ -276,6 +280,11 @@ done
 for PKG in $FUSEPKGS; do
     URLS="$URLS $FUSEURL/$PKG"
 done
+
+if [ "$EL" -eq 7 ]; then
+    # add fuse2fs only on EL7, it is standard elsewhere
+    URLS="$URLS $(getcoprurl fuse2fs)"
+fi
 
 mkdir -p $DIST/etc
 cd $DIST

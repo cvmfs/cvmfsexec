@@ -1,3 +1,6 @@
+cvmfsexec-4.20 - 7 July 2022
+- Add `-m` option to mount a scratch filesystem with fuse2fs.
+
 cvmfsexec-4.19 - 23 June 2022
 - Add rhel8-ppc64le supported type in makedist.  Does not include support
   for authenticated mounts because of no cvmfs-x509-helper.
