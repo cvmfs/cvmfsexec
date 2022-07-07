@@ -67,8 +67,8 @@ Discovery.  You may also want to set CVMFS_QUOTA_LIMIT, otherwise the
 default is 4000 MB.  The default CVMFS_CACHE_BASE for the cache
 shared between the cvmfs repository is under the dist directory,
 `dist/var/lib/cvmfs`, unless the `-m` option is used to add an e2fs
-filesystem (details below).  Make sure that the cache does not get shared
-between multiple machines.
+filesystem (details [below](#optionally-mount-a-scratch-filesystem)).
+Make sure that the cache does not get shared between multiple machines.
 
 ## Self-contained distribution
 
@@ -166,7 +166,7 @@ the space is never used.
 Then start cvmfsexec with `-m`.  For example, to mount only the
 cvmfs configuration repository and run a shell do
 ```
-cvmfsexec -m scratch.img --`
+cvmfsexec -m scratch.img --
 ```
 Then check out `/e2fs`.
 
