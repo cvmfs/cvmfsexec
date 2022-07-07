@@ -9,13 +9,14 @@
 #set -x
 #PS4='c$$+ '
 
-VERSION=4.19
+VERSION=4.20
 
 usage()
 {
-    echo "Usage: cvmfsexec [-vN] [repo ...] -- [command]" >&2
+    echo "Usage: cvmfsexec [-vN] [-m e2fs_image] [repo ...] -- [command]" >&2
     echo "       -v:   print current version and exit" >&2
     echo "       -N:   disable the option of nesting [u]mountrepo commands" >&2
+    echo "       -m:   mount given ext2/3/4 filesystem image at /e2fs" >&2
     exit 1
 }
 
@@ -56,15 +57,19 @@ exec {STDINCOPYFD}<&0
 ORIGPWD=$PWD
 
 NONESTING=false
+E2FSIMAGE=""
 # can't use OPTIND because it can't distinguish between -- there or missing
 NOPTS=0
-while getopts "vN" OPTION; do
+while getopts "vNm:" OPTION; do
     let NOPTS+=1
     case $OPTION in
         v)  echo "$VERSION"
             exit
             ;;
         N)  NONESTING=true
+            ;;
+        m)  E2FSIMAGE=$OPTARG
+            shift
             ;;
         \?) usage
             ;;
@@ -232,9 +237,9 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
     mount --rbind $HERE/mnt $HERE/mnt # pivot_root requires this mountpoint
     mkdir -p $HERE/mnt/cvmfs
 
-    # implement "underlay" for all but /cvmfs
+    # implement "underlay" for all but /cvmfs and /e2fs)
     for ROOTFILE in /.??* /*; do
-        if [ "\$ROOTFILE" == "/.??*" ] || [ "\$ROOTFILE" = "/cvmfs" ]; then
+        if [ "\$ROOTFILE" == "/.??*" ] || [ "\$ROOTFILE" = "/cvmfs" ] || [ "\$ROOTFILE" = "/e2fs" ]; then
             continue
         fi
         TARG=$HERE/mnt/\$ROOTFILE
@@ -294,6 +299,13 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         fi
 
         cd $HERE
+
+        if [ "$E2FSIMAGE" != "" ]; then
+            echo "Mounting $E2FSIMAGE at /e2fs"
+            mkdir -p /e2fs
+            PATH=$PATH:$HERE/dist/usr/sbin fuse2fs $E2FSIMAGE /e2fs
+        fi
+
         # mount the initial repos
         for REPO in $REPOS; do
             ./mountrepo \$REPO
