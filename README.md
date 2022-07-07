@@ -155,7 +155,7 @@ Make sure that there is a unique file for each running copy of cvmfsexec.
 Create the file with commands like this:
 ```
 dd if=/dev/zero of=scratch.img conv=sparse bs=1G count=6
-mkfs.ext3 scratch.img
+mkfs.ext4 -F -O ^has_journal scratch.img
 ```
 Choose a count of the number of gigabytes you want.  The default cache
 size is 4000 megabytes, and the recommendation is to reserve an
