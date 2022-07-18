@@ -1,3 +1,8 @@
+cvmfsexec-4.22 - 18 July 2022
+- Update the download URL for suse15, the old one doesn't work anymore
+- Put a more explicit message in as to why rhel8 does not work with egi
+- Remove old fallback code for osg rhel8 to download from osg-testing repo
+
 cvmfsexec-4.21 - 7 July 2022
 - Set LD_LIBRARY_PATH for fuse2fs to find libfuse from the dist directory.
 - Get rid of fuse2fs warnings by waiting for clean unmount when possible,
