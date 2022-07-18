@@ -203,16 +203,13 @@ if [ "$ARCH" = "ppc64le" ]; then
 else
     PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 fi
-if [ -z "$PKGS" ] && [ -z "$URLS" ]; then
-    if [ "$DISTTYPE" = osg ] && [ "$EL" = 8 ]; then
-        URL="`echo $URL|sed 's/release/testing/'`"
-        LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
-        PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
-    fi
-    if [ -z "$PKGS" ]; then
+if [ -z "$PKGS" ]; then
+    if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
+        echo "egi's UMD does not yet support rhel8" 2>&1
+    else
         echo "No cvmfs package found from $URL" >&2
-        exit 1
     fi
+    exit 1
 fi
 
 if [ "$DISTRO" = "suse" ]; then
@@ -254,7 +251,7 @@ if $SING; then
     fi
 else
     if [ "$DISTRO" = suse ]; then
-        FUSEURL="http://ewr.edge.kernel.org/opensuse/distribution/openSUSE-stable/repo/oss/x86_64"
+        FUSEURL="http://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
         FUSELIB=libfuse2
     else
         if [ "$EL" -lt 8 ]; then
