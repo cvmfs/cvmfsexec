@@ -9,7 +9,7 @@
 #set -x
 #PS4='c$$+ '
 
-VERSION=4.22
+VERSION=4.23
 
 usage()
 {
@@ -344,7 +344,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
     export CVMFSEXEC_CMDFD
     exec {CVMFSEXEC_CMDFD}>$CMDFIFO1 
 
-    if [ -z "$UNSHAREOPTS" ]; then
+    if [ -z "$UNSHAREOPTS" ] || [ $USERFUSE = false ]; then
         # running without new process namespace, so more cleanup
         #  needs to be done and our exit needs to wait for the
         #  background process to finish cleaning up
