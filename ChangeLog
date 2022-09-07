@@ -1,5 +1,8 @@
 - Fix makedist of suse machine type; the libfuse2 download link had an extra
   "Details" reference on the end that was confusing it.
+- Make makedist of rhel8-ppc64le work again.  It was broken by update in 4.22.
+- Use a unique name for each copr repo referenced, because otherwise
+  yumdownloader's caching gets confused.
 - Remove makedist support for rhel6 machine type.
 
 cvmfsexec-4.23 - 19 August 2022
