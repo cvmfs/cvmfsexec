@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel6-x86_64 rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
 
 usage()
 {
@@ -142,18 +142,10 @@ case $1 in
         exit
         ;;
     osg)
-        if [ "$EL" = 6 ]; then
-            REL=3.4
-        else
-            REL=3.6
-        fi
+        REL=3.6
         URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/x86_64";;
     egi)
-        if [ "$EL" = 6 ]; then
-            OS=sl6
-        else
-            OS=centos$EL
-        fi
+        OS=centos$EL
         URL="http://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default)
         URL="http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
