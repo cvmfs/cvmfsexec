@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel6-x86_64 rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
 
 usage()
 {
@@ -142,18 +142,10 @@ case $1 in
         exit
         ;;
     osg)
-        if [ "$EL" = 6 ]; then
-            REL=3.4
-        else
-            REL=3.6
-        fi
+        REL=3.6
         URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/x86_64";;
     egi)
-        if [ "$EL" = 6 ]; then
-            OS=sl6
-        else
-            OS=centos$EL
-        fi
+        OS=centos$EL
         URL="http://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default)
         URL="http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
@@ -174,12 +166,13 @@ echo "Making $SINGMSG$DISTTYPE distribution for $MACHTYPE"
 
 getcoprurl() {
     typeset TMPF=$(mktemp)
+    typeset REPONAME=makedist-$1
     cat >$TMPF <<!EOF!
-[arepo]
-name=arepo
+[$REPONAME]
+name=$REPONAME
 baseurl=https://download.copr.fedorainfracloud.org/results/dwd/$1/epel-$EL-$ARCH/
 !EOF!
-    yumdownloader -c $TMPF --disablerepo='*' --enablerepo=arepo --archlist=$ARCH --urls $1|while read LINE; do
+    yumdownloader -c $TMPF --disablerepo='*' --enablerepo=$REPONAME --archlist=$ARCH --urls $1|while read LINE; do
             if [[ "$LINE" == http* ]]; then
                 echo "$LINE"
             else
@@ -194,7 +187,7 @@ LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 INCLUDEHELPER=true
 if [ "$ARCH" = "ppc64le" ]; then
     # There's no cvmfs-x509-helper yet for this architecture, and 
-    #  we're looking x86_64 version repositories for the config rpm
+    #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
     # Grab cvmfs package from copr instead, using yumdownloader to calculate
     #  the URL
@@ -203,7 +196,7 @@ if [ "$ARCH" = "ppc64le" ]; then
 else
     PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
 fi
-if [ -z "$PKGS" ]; then
+if [ -z "$PKGS" ] && [ -z "$URLS" ]; then
     if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
         echo "egi's UMD does not yet support rhel8" 2>&1
     else
@@ -264,7 +257,9 @@ else
         fi
         FUSELIB=fuse-libs
     fi
-    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'|grep -v 32bit`"
+    # if there's more than one href, don't take the last one
+    # that's needed for the SUSE page which has an extra "Details" link
+    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|grep -v 32bit|sed 's/\(.*href=.*\)href=.*/\1/'|sed 's/.*href="//;s/".*//'`"
     if [ -z "$FUSEPKGS" ]; then
         echo "No $FUSELIB package found from $FUSEURL" >&2
         exit 1
