@@ -1,3 +1,5 @@
+- Add support in singcvmfs for using an ext3 image file for the cvmfs cache.
+
 cvmfsexec-4.24 - 7 September 2022
 - Fix makedist of suse machine type; the libfuse2 download link had an extra
   "Details" reference on the end that was confusing it.

@@ -31,7 +31,11 @@ Required environment variable when singularity command not given:
     SINGCVMFS_IMAGE         singularity container path or URL
 
 Optional environment variables:
-    SINGCVMFS_CACHEDIR      Directory for the cvmfs cache
+    SINGCVMFS_CACHEDIR      Source directory for the cvmfs cache
+    SINGCVMFS_CACHEIMAGE    Ext2/3/4 image file for the cvmfs cache
+                            - If set, then ${SINGCVMFS_CACHEDIR:-/} is the
+                              directory within the image used for the cache,
+                              which must be writable by the user
     SINGCVMFS_OPTSFILE      CVMFS options file (default.local)
                             - should set at least CVMFS_HTTP_PROXY
     SINGCVMFS_SINGOPTS      Extra singularity command options
@@ -106,7 +110,12 @@ done
 SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH#,}" # remove leading comma
 export SINGULARITY_BINDPATH
 
-CACHEDIR=${SINGCVMFS_CACHEDIR:-$PWD/var/lib/cvmfs}
+CACHEBIND=""
+if [ -n "$SINGCVMFS_CACHEIMAGE" ]; then
+    CACHEBIND="$SINGCVMFS_CACHEIMAGE:/var/lib/cvmfs:image-src=${SINGCVMFS_CACHEDIR:-/}"
+else
+    CACHEBIND="${SINGCVMFS_CACHEDIR:-$PWD/var/lib/cvmfs}:/var/lib/cvmfs"
+fi
 
 cd $ORIGPWD
 
@@ -153,7 +162,7 @@ then
     $EXEC singularity $SINGGLOBALOPTS $SINGCMD $SINGINSTCMD "$@"
 else
     $EXEC singularity $SINGGLOBALOPTS $SINGCMD $SINGINSTCMD \
-        -S /var/run/cvmfs -B $CACHEDIR:/var/lib/cvmfs \
+        -S /var/run/cvmfs -B $CACHEBIND \
         "${MOUNT_ARGS[@]}" ${SINGCVMFS_SINGOPTS[@]} $SINGCVMFS_IMAGE "$@"
 fi
 
