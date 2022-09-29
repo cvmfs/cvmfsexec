@@ -89,6 +89,9 @@ declare -a MOUNT_ARGS
 for R in ${REPOS//,/ }; do
     MOUNT_ARGS+=(--fusemount "\"container:cvmfs2-wrapper $CVMFSDEBUG $R /cvmfs/$R\"")
 done
+if [ -n "$APPTAINER_BINDPATH" ]; then
+    SINGULARITY_BINDPATH="$APPTAINER_BINDPATH"
+fi
 SINGULARITY_BINDPATH="$SINGULARITY_BINDPATH,$HERE/cvmfs2-wrapper:/usr/bin/cvmfs2-wrapper"
 
 cd $HERE/dist
@@ -109,6 +112,7 @@ for P in `find * ! -type d ! -path '*/doc/*' ! -path 'var/lib/cvmfs/*'| \
 done
 SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH#,}" # remove leading comma
 export SINGULARITY_BINDPATH
+export APPTAINER_BINDPATH="$SINGULARITY_BINDPATH"
 
 CACHEBIND=""
 if [ -n "$SINGCVMFS_CACHEIMAGE" ]; then
