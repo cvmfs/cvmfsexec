@@ -1,3 +1,4 @@
+cvmfsexec-4.26 - 1 November 2022
 - Skip binding in something from the host if it is inaccessible.
   Previously cvmfsexec assumed it was a file, but it could be an
   inaccessible directory and cause a bind mount failure.
