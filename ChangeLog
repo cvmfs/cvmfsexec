@@ -1,3 +1,7 @@
+- Skip binding in something from the host if it is inaccessible.
+  Previously cvmfsexec assumed it was a file, but it could be an
+  inaccessible directory and cause a bind mount failure.
+
 cvmfsexec-4.25 - 28 September 2022
 - Set APPTAINER_BINDPATH in addition to SINGULARITY_BINDPATH in singcvmfs
   for supporting apptainer.

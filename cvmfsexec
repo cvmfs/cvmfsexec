@@ -248,9 +248,12 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         elif [ -d \$ROOTFILE ]; then
             mkdir -p \$TARG
             mount --rbind \$ROOTFILE \$TARG
-        else
+        elif [ -f \$ROOTFILE ]; then
             touch \$TARG
             mount --bind \$ROOTFILE \$TARG
+        else
+            : \$ROOTFILE not directory, file, of symlink; skipping bind mount
+            : This can happen if the source had Permission denied
         fi
     done
 
