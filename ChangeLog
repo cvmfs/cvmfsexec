@@ -1,3 +1,4 @@
+cvmfsexec-4.27 - 2 November 2022
 - Set X509_USER_PROXY and/or BEARER_TOKEN_FILE if they are not set,
   because the cvmfs authorization helper runs under the fake root user
   and so it by default looks at the 0 id instead of the user's id.
