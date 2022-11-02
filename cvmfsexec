@@ -54,6 +54,15 @@ export CVMFSEXEC_WAITFIFO=$WAITFIFO1
 # make a copy of stdin fd, for use in '&' and by unshare
 exec {STDINCOPYFD}<&0
 
+# set up standard certificate & token paths if not already set,
+# because the authorization helper runs as a fake root user.
+if [ -z "$X509_USER_PROXY" ]; then
+    export X509_USER_PROXY="/tmp/x509up_u$UID"
+fi
+if [ -z "$BEARER_TOKEN_FILE" ]; then
+    export BEARER_TOKEN_FILE="${XDG_RUNTIME_DIR:-/tmp}/bt_u$UID"
+fi
+
 ORIGPWD=$PWD
 
 NONESTING=false
