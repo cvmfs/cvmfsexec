@@ -154,7 +154,7 @@ it can also be used as scratch workspace for jobs.
 Make sure that there is a unique file for each running copy of cvmfsexec.
 Create the file with commands like this:
 ```
-dd if=/dev/zero of=scratch.img conv=sparse bs=1G count=6
+truncate -s 600G scratch.img
 mkfs.ext4 -F -O ^has_journal scratch.img
 ```
 Choose a count of the number of gigabytes you want.  The default cache
