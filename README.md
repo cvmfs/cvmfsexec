@@ -314,3 +314,21 @@ feature to share the cache, but you would have to make sure that the
 cache doesn't grow too big and that it gets cleaned up at some point.
 Make sure that caches are not on shared filesystems because they're
 likely to do too many metadata operations.
+
+There is also a SINGCVMFS_CACHEIMAGE variable which can be set to an
+Ext2/3/4 filesystem image for the cache.  If set, it must point to a
+file with such a filesystem including a directory that is writable by
+the user or a `shared` directory within it that is writable by the user.
+The directory within the filesystem can be changed by setting
+SINGCVMFS_CACHEDIR but defaults to the root directory, `/`.
+If running as an unprivileged user, this can directory can be created
+using the `mkfs.ext3 -d` option.  Unfortunately the version of
+`mkfs.ext3` on RHEL7 is too old, but it can be compiled from
+[source](https://github.com/tytso/e2fsprogs/blob/master/INSTALL).
+Then to make the image file these commands should work:
+
+```
+$ truncate -s 6G scratch.img
+$ mkdir -p tmp/shared
+$ mkfs.ext3 -F -O ^has_journal -d tmp scratch.img
+```
