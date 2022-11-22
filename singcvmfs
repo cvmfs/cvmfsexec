@@ -35,7 +35,8 @@ Optional environment variables:
     SINGCVMFS_CACHEIMAGE    Ext2/3/4 image file for the cvmfs cache
                             - If set, then ${SINGCVMFS_CACHEDIR:-/} is the
                               directory within the image used for the cache,
-                              which must be writable by the user
+                              which must be writable by the user or contain
+                              a 'shared' directory writable by the user
     SINGCVMFS_OPTSFILE      CVMFS options file (default.local)
                             - should set at least CVMFS_HTTP_PROXY
     SINGCVMFS_SINGOPTS      Extra singularity command options
