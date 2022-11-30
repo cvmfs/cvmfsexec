@@ -1,3 +1,5 @@
+- Change rpm downloads to all use https
+
 cvmfsexec-4.27 - 2 November 2022
 - Set X509_USER_PROXY and/or BEARER_TOKEN_FILE if they are not set,
   because the cvmfs authorization helper runs under the fake root user
