@@ -146,9 +146,9 @@ case $1 in
         URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/release/x86_64";;
     egi)
         OS=centos$EL
-        URL="http://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
+        URL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default)
-        URL="http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
+        URL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
     *) usage;;
 esac
 DISTTYPE=$1
@@ -230,7 +230,7 @@ else
     ELPATH=os/$ARCH
 fi
 if $SING; then
-    FUSEURL="http://download.fedoraproject.org/pub/epel/$FUSE3EL/$ARCH/Packages/f"
+    FUSEURL="https://download.fedoraproject.org/pub/epel/$FUSE3EL/$ARCH/Packages/f"
     CVMFSFUSE3="`echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
     if [ -z "$CVMFSFUSE3" ]; then
         echo "No cvmfs-fuse3 package found from $URL" >&2
@@ -244,11 +244,11 @@ if $SING; then
     fi
 else
     if [ "$DISTRO" = suse ]; then
-        FUSEURL="http://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
+        FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
         FUSELIB=libfuse2
     else
         if [ "$EL" -lt 8 ]; then
-            FUSEURL="http://mirror.centos.org/centos-$EL/$EL/$ELPATH/Packages"
+            FUSEURL="https://linux-mirrors.fnal.gov/linux/centos/$EL/$ELPATH/Packages"
         elif [ "$EL" -eq 8 ]; then
             FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
         else
