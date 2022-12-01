@@ -1,4 +1,6 @@
 - Change rpm downloads to all use https
+- Change the source of the fuse3-libs on el8 for makedist -s to be alma8
+  instead of epel7, now that the version is updated there to be new enough.
 
 cvmfsexec-4.27 - 2 November 2022
 - Set X509_USER_PROXY and/or BEARER_TOKEN_FILE if they are not set,
