@@ -1,3 +1,5 @@
+cvmfsexec-4.28 - 21 December 2022
+- Fix a bug in the code handling inaccessible binds, introduced in 4.26.
 - Change rpm downloads to all use https
 - Change the source of the fuse3-libs on el8 for makedist -s to be alma8
   instead of epel7, now that the version is updated there to be new enough.
