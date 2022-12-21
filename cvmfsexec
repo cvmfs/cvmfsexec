@@ -9,7 +9,7 @@
 #set -x
 #PS4='c$$+ '
 
-VERSION=4.27
+VERSION=4.28
 
 usage()
 {
@@ -261,7 +261,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
             touch \$TARG
             mount --bind \$ROOTFILE \$TARG
         else
-            : \$ROOTFILE not directory, file, of symlink; skipping bind mount
+            : \$ROOTFILE not directory, file, or symlink -- skipping bind mount
             : This can happen if the source had Permission denied
         fi
     done
