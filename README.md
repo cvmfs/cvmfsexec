@@ -10,7 +10,7 @@ do this in 4 different ways:
 1. On systems where only fusermount is available, the `mountrepo` and
    `umountrepo` commands can be used to mount cvmfs repositories in the
    user's own file space.  That path can then be bindmounted at /cvmfs
-   by a container manager such as 
+   by a container manager such as
    [singularity](https://github.com/hpcng/singularity).
 2. On systems where fusermount is available and unprivileged user
    namespaces are enabled, but unprivileged namespace fuse mounts are not
@@ -40,7 +40,7 @@ do this in 4 different ways:
 # Supported operating systems
 
 Operating systems currently supported by this package are Red Hat
-Enterprise Linux (versions 7 and 8) and its derivatives (CentOS,
+Enterprise Linux (versions 7, 8, and 9) and its derivatives (CentOS,
 Scientific Linux, Rocky Linux) and SUSE Linux Enterprise (version 15)
 and its derivatives (openSUSE Leap).  All of those support the
 x86_64 architecture, and RHEL8 also supports ppc64le.
@@ -52,7 +52,9 @@ copy of the cvmfs software.  The cvmfs software and configuration are
 expected to be in a `dist` subdirectory under where the scripts are.  The
 easiest way to create the dist directory is to use `makedist`.  It takes a
 parameter of `osg`, `egi`, or `default` to download the latest cvmfs and
-configuration rpm from one of those three sources.
+configuration rpm from one of those three sources. Note: `egi` does not
+currently provide rpms for RHEL8/9, and `osg` does not currently provide
+rpms for RHEL9.
 
 By default a distribution for `cvmfsexec` and `mountrepo/umountrepo` is
 created.  To instead make a distribution for `singcvmfs`, add the `-s`
@@ -93,10 +95,10 @@ a singcvmfs file leaves behind a .singcvmfs directory.
 
 # cvmsexec command
 
-The cvmfsexec command requires unprivileged user namespaces.  On RHEL8
+The cvmfsexec command requires unprivileged user namespaces.  On RHEL8/9
 unprivileged user namepaces (and user namespace fuse mounts) are
 available by default, but on RHEL7 they need to be enabled by setting a
-sysctl parameter as detailed in the 
+sysctl parameter as detailed in the
 [OSG unprivileged singularity instructions](https://opensciencegrid.org/docs/worker-node/install-singularity/#enabling-unprivileged-singularity).
 In addition cvmfsexec requires fusermount on kernels older than
 those that come with RHEL7.8.
@@ -105,7 +107,7 @@ To execute a command in an environment where cvmfs repositories are
 mounted at /cvmfs and automatically unmounted upon exit, use
 `cvmfsexec repository.name ... -- [command]` where the default command
 is $SHELL.  It will automatically mount the configuration repository if
-one is defined.  
+one is defined.
 
 Unless disabled with the `-N` option,
 inside the command you can mount additional repositories by using
