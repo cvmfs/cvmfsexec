@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel9-x86_64 rhel8-ppc64le suse15-x86_64"
 
 usage()
 {
@@ -186,7 +186,7 @@ URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 INCLUDEHELPER=true
 if [ "$ARCH" = "ppc64le" ]; then
-    # There's no cvmfs-x509-helper yet for this architecture, and 
+    # There's no cvmfs-x509-helper yet for this architecture, and
     #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
     # Grab cvmfs package from copr instead, using yumdownloader to calculate
