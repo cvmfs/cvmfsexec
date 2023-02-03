@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel9-x86_64 rhel8-ppc64le suse15-x86_64"
 
 usage()
 {
@@ -186,7 +186,7 @@ URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 INCLUDEHELPER=true
 if [ "$ARCH" = "ppc64le" ]; then
-    # There's no cvmfs-x509-helper yet for this architecture, and 
+    # There's no cvmfs-x509-helper yet for this architecture, and
     #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
     # Grab cvmfs package from copr instead, using yumdownloader to calculate
@@ -247,10 +247,13 @@ else
         elif [ "$EL" -eq 8 ]; then
             FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
         else
-            FUSEURL="http://mirror.stream.centos.org/$EL-stream/BaseOS/$arch/os/Packages"
-            # Note: fuse3 not in 9 yet so this is just a placeholder
+            FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
         fi
-        FUSELIB=fuse-libs
+        if [ "$EL" -lt 9 ]; then
+            FUSELIB=fuse-libs
+        else
+            FUSELIB=fuse3-libs
+        fi
     fi
     # if there's more than one href, don't take the last one
     # that's needed for the SUSE page which has an extra "Details" link
