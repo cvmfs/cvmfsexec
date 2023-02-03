@@ -41,7 +41,8 @@ do this in 4 different ways:
 
 Operating systems currently supported by this package are Red Hat
 Enterprise Linux (versions 7, 8, and 9) and its derivatives (CentOS,
-Scientific Linux, Rocky Linux) and SUSE Linux Enterprise (version 15)
+Scientific Linux, Rocky Linux, Alma Linux)
+and SUSE Linux Enterprise (version 15)
 and its derivatives (openSUSE Leap).  All of those support the
 x86_64 architecture, and RHEL8 also supports ppc64le.
 
@@ -53,8 +54,7 @@ expected to be in a `dist` subdirectory under where the scripts are.  The
 easiest way to create the dist directory is to use `makedist`.  It takes a
 parameter of `osg`, `egi`, or `default` to download the latest cvmfs and
 configuration rpm from one of those three sources. Note: `egi` does not
-currently provide rpms for RHEL8/9, and `osg` does not currently provide
-rpms for RHEL9.
+currently provide rpms for RHEL8 or 9.
 
 By default a distribution for `cvmfsexec` and `mountrepo/umountrepo` is
 created.  To instead make a distribution for `singcvmfs`, add the `-s`
