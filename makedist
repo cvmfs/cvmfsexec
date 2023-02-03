@@ -247,10 +247,13 @@ else
         elif [ "$EL" -eq 8 ]; then
             FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
         else
-            FUSEURL="http://mirror.stream.centos.org/$EL-stream/BaseOS/$arch/os/Packages"
-            # Note: fuse3 not in 9 yet so this is just a placeholder
+            FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
         fi
-        FUSELIB=fuse-libs
+        if [ "$EL" -lt 9 ]; then
+            FUSELIB=fuse-libs
+        else
+            FUSELIB=fuse3-libs
+        fi
     fi
     # if there's more than one href, don't take the last one
     # that's needed for the SUSE page which has an extra "Details" link
