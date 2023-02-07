@@ -111,7 +111,11 @@ case $1 in
         BASENAME=cvmfsexec
         TOOLS="cvmfsexec mountrepo umountrepo"
         SEDOPTS=""
-        NEEDLIB=libfuse.so.2
+        if [ "$EL" -lt 9 ]; then
+            NEEDLIB=libfuse.so.2
+        else
+            NEEDLIB=libfuse3.so.3
+        fi
         REQUIRES="makedist (without -s)"
         if $SING; then
             BASENAME=singcvmfs
