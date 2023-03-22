@@ -51,6 +51,16 @@ FUNCS=$TMPDIR/funcs
 mkfifo $CMDFIFO1 $WAITFIFO1 $CMDFIFO2 $WAITFIFO2
 export CVMFSEXEC_WAITFIFO=$WAITFIFO1
 
+# bash syntax {NAME}<&N doesn't work on older bashes such as the 
+# version 3.2.x on macOS Big Sur, and in fact it fails with an error
+# message but not an error code, so test for it first to be able to
+# gracefully die
+
+if [ -n "$({TESTX}<&0 2>&1)" ]; then
+    echo "Cannot assign file descriptors to variables, bash version too old" >&2
+    exit 1
+fi
+
 # make a copy of stdin fd, for use in '&' and by unshare
 exec {STDINCOPYFD}<&0
 
