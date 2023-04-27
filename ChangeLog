@@ -1,3 +1,5 @@
+- Fix fuse3-libs package repo on EL8 when building for singcvmfs.
+
 cvmfsexec-4.30 - 6 February 2023
 - Fix rhel9 support in makedist -o.
 
