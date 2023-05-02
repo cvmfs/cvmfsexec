@@ -88,7 +88,7 @@ CVMFS_MOUNT_DIR=$DIST/cvmfs
 
 relocate $DIST/etc/cvmfs/default.conf
 relocate $DIST/etc/cvmfs/default.d/*.conf
-if [ "$REPO" != "$CONFIG_REPO" ]; then
+if [ -n "$CONFIG_REPO" -a "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/default.conf
 fi
 
@@ -107,12 +107,12 @@ if ! grep -q "^CVMFS_CACHE_BASE=" $DEFLOCAL 2>/dev/null && [ -d /e2fs ]; then
     echo "CVMFS_CACHE_BASE=/e2fs/cvmfscache"
 fi
 
-if [ "$REPO" != "$CONFIG_REPO" ]; then
+if [ -n "$CONFIG_REPO" -a "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/domain.d/$DOMAIN.conf
 fi
 relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.conf
 relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.local
-if [ "$REPO" != "$CONFIG_REPO" ]; then
+if [ -n "$CONFIG_REPO" -a "$REPO" != "$CONFIG_REPO" ]; then
     REPOCONF=$DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/config.d/$REPO.conf
     if [ "$REPO" = oasis.opensciencegrid.org ]; then
         # OASIS_CERTIFICATES is one special variable we do not want relocated
