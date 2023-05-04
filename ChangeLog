@@ -1,3 +1,4 @@
+- Support a `none` build for no cvmfs-config
 - Fix mountrepo for the case where a config repo is not set.
 - Fix fuse3-libs package repo on EL8 when building for singcvmfs.
 
