@@ -318,7 +318,7 @@ Make sure that caches are not on shared filesystems because they're
 likely to do too many metadata operations.
 
 There is also a SINGCVMFS_CACHEIMAGE variable which can be set to an
-Ext2/3/4 filesystem image for the cache.  If set, it must point to a
+ext3 filesystem image for the cache.  If set, it must point to a
 file with such a filesystem including a directory that is writable by
 the user or a `shared` directory within it that is writable by the user.
 The directory within the filesystem can be changed by setting
