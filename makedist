@@ -10,7 +10,7 @@ SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le rhel9-x86_64 suse15-x86_
 usage()
 {
     (
-    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|none|default}"
+    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default|none}"
     echo "       makedist [-s] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
