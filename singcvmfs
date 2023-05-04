@@ -32,7 +32,7 @@ Required environment variable when singularity command not given:
 
 Optional environment variables:
     SINGCVMFS_CACHEDIR      Source directory for the cvmfs cache
-    SINGCVMFS_CACHEIMAGE    Ext2/3/4 image file for the cvmfs cache
+    SINGCVMFS_CACHEIMAGE    Ext3 image file for the cvmfs cache
                             - If set, then ${SINGCVMFS_CACHEDIR:-/} is the
                               directory within the image used for the cache,
                               which must be writable by the user or contain
