@@ -40,9 +40,8 @@ fi
 HERE="$(cd `dirname $0` && pwd)"
 DIST="$HERE/dist"
 
-if [ ! -f $DIST/usr/bin/cvmfs2 ] || \
-      [ -z "`find $DIST/etc/cvmfs/default.d -name "*.conf" 2>/dev/null`" ]; then
-    echo "$DIST should be rpm2cpio of cvmfs + config rpm" >&2
+if [ ! -f $DIST/usr/bin/cvmfs2 ] || [ ! -f $DIST/etc/cvmfs/default.conf ]; then
+    echo "$DIST should be rpm2cpio of cvmfs rpm" >&2
     exit 1
 fi
 
@@ -80,15 +79,20 @@ relocate()
 
 DOMAIN="`echo "$REPO"|cut -d. -f2-`"
 (
-CONFIG_REPO="`sed -n 's/^CVMFS_CONFIG_REPOSITORY=//p' $DIST/etc/cvmfs/default.d/*.conf`"
+DEFD_FILES="`find $DIST/etc/cvmfs/default.d -name "*.conf" 2>/dev/null`"
+if [ -n "$DEFD_FILES" ]; then
+    CONFIG_REPO="`sed -n 's/^CVMFS_CONFIG_REPOSITORY=//p' $DIST/etc/cvmfs/default.d/*.conf`"
+fi
 # these are used in some configuration repository includes, set them
 #   for procsource
 CVMFS_CONFIG_REPOSITORY=$CONFIG_REPO
 CVMFS_MOUNT_DIR=$DIST/cvmfs
 
 relocate $DIST/etc/cvmfs/default.conf
-relocate $DIST/etc/cvmfs/default.d/*.conf
-if [ "$REPO" != "$CONFIG_REPO" ]; then
+if [ -n "$DEFD_FILES" ]; then
+    relocate $DIST/etc/cvmfs/default.d/*.conf
+fi
+if [ -n "$CONFIG_REPO" -a "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/default.conf
 fi
 
@@ -107,12 +111,12 @@ if ! grep -q "^CVMFS_CACHE_BASE=" $DEFLOCAL 2>/dev/null && [ -d /e2fs ]; then
     echo "CVMFS_CACHE_BASE=/e2fs/cvmfscache"
 fi
 
-if [ "$REPO" != "$CONFIG_REPO" ]; then
+if [ -n "$CONFIG_REPO" -a "$REPO" != "$CONFIG_REPO" ]; then
     relocate $DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/domain.d/$DOMAIN.conf
 fi
 relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.conf
 relocate $DIST/etc/cvmfs/domain.d/$DOMAIN.local
-if [ "$REPO" != "$CONFIG_REPO" ]; then
+if [ -n "$CONFIG_REPO" -a "$REPO" != "$CONFIG_REPO" ]; then
     REPOCONF=$DIST/cvmfs/$CONFIG_REPO/etc/cvmfs/config.d/$REPO.conf
     if [ "$REPO" = oasis.opensciencegrid.org ]; then
         # OASIS_CERTIFICATES is one special variable we do not want relocated

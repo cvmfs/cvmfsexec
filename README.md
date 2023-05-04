@@ -54,7 +54,9 @@ expected to be in a `dist` subdirectory under where the scripts are.  The
 easiest way to create the dist directory is to use `makedist`.  It takes a
 parameter of `osg`, `egi`, or `default` to download the latest cvmfs and
 configuration rpm from one of those three sources. Note: `egi` does not
-currently provide rpms for RHEL8 or 9.
+currently provide rpms for RHEL8 or 9. Additionally, specifying `none`
+will download from the `default` source but exclude the
+`cvmfs-config-default` package.
 
 By default a distribution for `cvmfsexec` and `mountrepo/umountrepo` is
 created.  To instead make a distribution for `singcvmfs`, add the `-s`

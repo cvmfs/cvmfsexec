@@ -10,7 +10,7 @@ SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le rhel9-x86_64 suse15-x86_
 usage()
 {
     (
-    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default}"
+    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|none|default}"
     echo "       makedist [-s] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
@@ -156,7 +156,7 @@ case $1 in
     egi)
         OS=centos$EL
         URL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
-    default)
+    default|none)
         URL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
     *) usage;;
 esac
@@ -223,7 +223,10 @@ if [ "$DISTRO" = "suse" ]; then
     PKGS=""
 fi
 
-PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
+if [ "$DISTTYPE" != "none" ]; then
+    PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
+fi
+
 if $INCLUDEHELPER; then
     PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
 fi
