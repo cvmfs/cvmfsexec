@@ -1,4 +1,7 @@
-cvmfsexec-4.31 - 6 February 2023
+cvmfsexec-4.32 - 11 May 2023
+- Fix typo in version 4.31 that caused config repo to be ignored.
+
+cvmfsexec-4.31 - 4 May 2023
 - Add a `none` distribution type in makedist, for no cvmfs config repo.
 - Fix mountrepo for the case where a config repo is not set.
 - Fix fuse3-libs package repo on EL8 when building for singcvmfs.
