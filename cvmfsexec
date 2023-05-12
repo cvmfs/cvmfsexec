@@ -113,7 +113,7 @@ fi
 shift
 
 # Add the config repo if not already asked for
-if [ -n "`find $HERE/etc/cvmfs/default.d -name "*.conf" 2>/dev/null`" ]; then
+if [ -n "`find $HERE/dist/etc/cvmfs/default.d -name "*.conf" 2>/dev/null`" ]; then
     CONFIG_REPO="`grep -h '^CVMFS_CONFIG_REPOSITORY=' $HERE/dist/etc/cvmfs/default.d/*.conf 2>/dev/null|tail -1|sed 's/^CVMFS_CONFIG_REPOSITORY=//'`"
     if [[ " $REPOS " != *" $CONFIG_REPO "* ]]; then
         REPOS="$CONFIG_REPO $REPOS"
