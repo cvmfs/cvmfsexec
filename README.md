@@ -254,7 +254,8 @@ repository is needed it will be automatically mounted.  Then you can use
 singcvmfs exactly like singularity with one of its exec, instance, run,
 or shell commands (note: it cannot read an image from cvmfs).  For example,
 once you have [made a singcvmfs distribution](#making-the-cvmfs-distribution)
-the following should work:
+the following should work (replace `centos:7` with a container matching
+the host's operating system):
 
 ```
 $ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
