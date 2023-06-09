@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le rhel9-x86_64 suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-x86_64 suse15-x86_64"
 
 usage()
 {
@@ -194,10 +194,12 @@ baseurl=https://download.copr.fedorainfracloud.org/results/dwd/$1/epel-$EL-$ARCH
 URLS=""
 LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 INCLUDEHELPER=true
-if [ "$ARCH" = "ppc64le" ]; then
-    # There's no cvmfs-x509-helper yet for this architecture, and
+if [ "$ARCH" != "x86_64" ]; then
+    # There's no cvmfs-x509-helper yet for non-x86 architectures, and
     #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
+fi
+if [ "$ARCH" = "ppc64le" ]; then
     # Grab cvmfs package from copr instead, using yumdownloader to calculate
     #  the URL
     URLS="$(getcoprurl cvmfs)"
@@ -214,14 +216,21 @@ if [ -z "$PKGS" ] && [ -z "$URLS" ]; then
     exit 1
 fi
 
+MACH=el$EL
 if [ "$DISTRO" = "suse" ]; then
-    # now that we can figure out the latest cvmfs version, find the
-    #   corresponding sle cvmfs package instead
-    CVMFSVERSION="`echo "$PKGS"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
-    CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
-    URLS="$CVMFSURL/`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*sle.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
-    PKGS=""
+    MACH=sle
 fi
+# now that we can figure out the latest cvmfs version, download the
+#   corresponding cvmfs packages from CERN instead
+CVMFSVERSION="`echo "$PKGS"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
+CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
+CVMFSRPMNAME="`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*$MACH.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
+if [ -z "$CVMFSRPMNAME" ]; then
+    echo "No matching cvmfs rpm found at $CVMFSURL" >&2
+    exit 1
+fi
+URLS="$CVMFSURL/$CVMFSRPMNAME"
+PKGS=""
 
 if [ "$DISTTYPE" != "none" ]; then
     PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
@@ -232,13 +241,9 @@ if $INCLUDEHELPER; then
 fi
 
 FUSEPKGS=""
+CVMFSFUSE3URL="$CVMFSURL/`echo "$CVMFSRPMNAME"|sed 's/cvmfs-/cvmfs-fuse3-/'`"
 if $SING; then
-    CVMFSFUSE3="`echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
-    if [ -z "$CVMFSFUSE3" ]; then
-        echo "No cvmfs-fuse3 package found from $URL" >&2
-        exit 1
-    fi
-    PKGS="$PKGS $CVMFSFUSE3"
+    URLS="$URLS $CVMFSFUSE3URL"
     if [ "$EL" -lt 8 ]; then
         FUSEURL="https://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages/f"
     elif [ "$EL" -eq 8 ]; then
@@ -267,12 +272,7 @@ else
             FUSELIB=fuse-libs
         else
             FUSELIB=fuse3-libs
-            CVMFSFUSE3="`echo "$LIST"|grep "^cvmfs-fuse3-[0-9]"|tail -1`"
-            if [ -z "$CVMFSFUSE3" ]; then
-                echo "No cvmfs-fuse3 package found from $URL" >&2
-                exit 1
-            fi
-            PKGS="$PKGS $CVMFSFUSE3"
+            URLS="$URLS $CVMFSFUSE3URL"
         fi
     fi
     # if there's more than one href, don't take the last one
