@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-ppc64le rhel9-x86_64 suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-x86_64 rhel8-aarch64 rhel8-ppc64le rhel9-x86_64 suse15-x86_64"
 
 usage()
 {
@@ -157,7 +157,7 @@ case $1 in
         OS=centos$EL
         URL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default|none)
-        URL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
+        URL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/$ARCH";;
     *) usage;;
 esac
 DISTTYPE=$1
