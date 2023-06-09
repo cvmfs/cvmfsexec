@@ -44,7 +44,7 @@ Enterprise Linux (versions 7, 8, and 9) and its derivatives (CentOS,
 Scientific Linux, Rocky Linux, Alma Linux)
 and SUSE Linux Enterprise (version 15)
 and its derivatives (openSUSE Leap).  All of those support the
-x86_64 architecture, and RHEL8 also supports ppc64le.
+x86_64 architecture, and RHEL8 also supports ppc64le and aarch64.
 
 # Making the cvmfs distribution
 
