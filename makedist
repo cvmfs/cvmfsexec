@@ -277,7 +277,7 @@ else
     fi
     # if there's more than one href, don't take the last one
     # that's needed for the SUSE page which has an extra "Details" link
-    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|grep -v 32bit|sed 's/\(.*href=.*\)href=.*/\1/'|sed 's/.*href="//;s/".*//'`"
+    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|grep -v 32bit|sed 's/\(.*href=.*\)href=.*/\1/'|sed 's/.*href="//;s/".*//'|head -1`"
     if [ -z "$FUSEPKGS" ]; then
         echo "No $FUSELIB package found from $FUSEURL" >&2
         exit 1
