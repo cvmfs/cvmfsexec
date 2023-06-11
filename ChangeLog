@@ -1,3 +1,4 @@
+cvmfsexec-4.33 - 11 June 2023
 - Add rhel8-aarch64 machine type.
 - Avoid error messages from extra attempted downloads of the fuse2 library
   on the suse15-x86_64 machine type.
