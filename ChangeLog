@@ -1,3 +1,9 @@
+cvmfsexec-4.34 - 21 June 2023
+- Fix makedist -o when cross-building between el9 and non-el9 hosts so
+  that it doesn't need to be passed the -m option again to match what
+  was given to makedist without -o.  It also was not able to distinguish
+  on el9 between distributions that had been made with and without -s.
+
 cvmfsexec-4.33 - 11 June 2023
 - Add rhel8-aarch64 machine type.
 - Avoid error messages from extra attempted downloads of the fuse2 library

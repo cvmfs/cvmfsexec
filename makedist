@@ -111,20 +111,21 @@ case $1 in
         BASENAME=cvmfsexec
         TOOLS="cvmfsexec mountrepo umountrepo"
         SEDOPTS=""
-        if [ "$EL" -lt 9 ]; then
-            NEEDLIB=libfuse.so.2
-        else
-            NEEDLIB=libfuse3.so.3
-        fi
         REQUIRES="makedist (without -s)"
         if $SING; then
             BASENAME=singcvmfs
             TOOLS="singcvmfs cvmfs2-wrapper"
             SEDOPTS="-e s/cvmfsexec/$BASENAME/"
-            NEEDLIB=libfuse3.so.3
             REQUIRES="makedist -s"
         fi
-        if [ ! -f $DIST/usr/lib*/$NEEDLIB ] && [ ! -f $DIST/lib*/$NEEDLIB ]; then
+        DISTLIB=libcvmfs_fuse.so
+        SINGLIB=libcvmfs_fuse3.so
+        HASSINGLIB=false
+        if [ -f $DIST/usr/lib*/$SINGLIB ] || [ -f $DIST/lib*/$SINGLIB ]; then
+            HASSINGLIB=true
+        fi
+        if ([ ! -f $DIST/usr/lib*/$DISTLIB ] && [ ! -f $DIST/lib*/$DISTLIB ]) \
+                || [ $SING != $HASSINGLIB ]; then
             echo "Must be run from where cvmfs distribution was made by $REQUIRES" >&2
             exit 1
         fi
