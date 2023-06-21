@@ -118,14 +118,20 @@ case $1 in
             SEDOPTS="-e s/cvmfsexec/$BASENAME/"
             REQUIRES="makedist -s"
         fi
-        DISTLIB=libcvmfs_fuse.so
-        SINGLIB=libcvmfs_fuse3.so
-        HASSINGLIB=false
-        if [ -f $DIST/usr/lib*/$SINGLIB ] || [ -f $DIST/lib*/$SINGLIB ]; then
-            HASSINGLIB=true
+        # For now (as of 6-21-23), only require $DIST/.cvmfsexecdist for -s
+        # mode, so those not using -s don't have to re-make their distribution.
+        # Eventually this can be changed to always require that file instead
+        # of $DISTLIB.
+        HASSING=false
+        if [ -f $DIST/.cvmfsexecdist ]; then
+            read X DISTTYPE Y <$DIST/.cvmfsexecdist
+            if [ "$DISTTYPE" = "sing" ]; then
+                HASSING=true
+            fi
         fi
+        DISTLIB=libcvmfs_fuse.so
         if ([ ! -f $DIST/usr/lib*/$DISTLIB ] && [ ! -f $DIST/lib*/$DISTLIB ]) \
-                || [ $SING != $HASSINGLIB ]; then
+                || [ $SING != $HASSING ]; then
             echo "Must be run from where cvmfs distribution was made by $REQUIRES" >&2
             exit 1
         fi
@@ -331,3 +337,13 @@ else
 fi
 echo "CVMFS_PAC_URLS=\"http://grid-wpad/wpad.dat;http://wpad/wpad.dat;$WLCGPACS\""
 ) >etc/cvmfs/default.local
+
+echo "./.cvmfsexecdist"
+(
+if $SING; then
+    echo "disttype: sing"
+else
+    echo "disttype: standard"
+fi
+echo "machtype: $MACHTYPE"
+) >.cvmfsexecdist
