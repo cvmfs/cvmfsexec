@@ -1,3 +1,12 @@
+cvmfsexec-4.35 - 21 June 2023
+- The previous fix was not actually able to distinguish between -s and
+  not -s on el9.  So instead, makedist now always creates a file
+  .cvmfsexecdist at the top level which says what type it is, "sing" or
+  "standard", and also what the machine type was.  makedist -o requires
+  that file only with -s (for now), so anyone with a makedist -s
+  distribution will have to remake their distribution if they want to
+  use -o.
+
 cvmfsexec-4.34 - 21 June 2023
 - Fix makedist -o when cross-building between el9 and non-el9 hosts so
   that it doesn't need to be passed the -m option again to match what
