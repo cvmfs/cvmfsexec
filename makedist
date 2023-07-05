@@ -94,8 +94,10 @@ if [[ " $SUPPORTEDTYPES " != *" $MACHTYPE "* ]]; then
 fi
 
 EL=$VERS
+MACH=el$EL
 if [ "$DISTRO" = "suse" ]; then
     EL=7  # we get some suse stuff from rhel7
+    MACH=sle
 fi
 
 HERE="$(cd `dirname $0` && pwd)"
@@ -198,23 +200,17 @@ baseurl=https://download.copr.fedorainfracloud.org/results/dwd/$1/epel-$EL-$ARCH
     rm -f $TMPF
 }
 
-URLS=""
-LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
 INCLUDEHELPER=true
 if [ "$ARCH" != "x86_64" ]; then
     # There's no cvmfs-x509-helper yet for non-x86 architectures, and
     #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
 fi
-if [ "$ARCH" = "ppc64le" ]; then
-    # Grab cvmfs package from copr instead, using yumdownloader to calculate
-    #  the URL
-    URLS="$(getcoprurl cvmfs)"
-    PKGS=""
-else
-    PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
-fi
-if [ -z "$PKGS" ] && [ -z "$URLS" ]; then
+
+URLS=""
+LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
+PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
+if [ -z "$PKGS" ]; then
     if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
         echo "egi's UMD does not yet support rhel8" 2>&1
     else
@@ -223,20 +219,28 @@ if [ -z "$PKGS" ] && [ -z "$URLS" ]; then
     exit 1
 fi
 
-MACH=el$EL
-if [ "$DISTRO" = "suse" ]; then
-    MACH=sle
+CVMFSURL=""
+if [ "$ARCH" = "ppc64le" ]; then
+    # Grab cvmfs package from copr, using yumdownloader to calculate
+    #  the URL
+    CVMFSRPMURL="$(getcoprurl cvmfs)"
+    if [ -z "$CVMFSRPMURL" ]; then
+        echo "Failed to get $ARCH cvmfs rpm from copr" >&2
+        exit 1
+    fi
+else
+    # Now that we can figure out the latest cvmfs version, download the
+    #   corresponding cvmfs packages from CERN instead
+    CVMFSVERSION="`echo "$PKGS"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
+    CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
+    CVMFSRPMNAME="`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*$MACH.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
+    if [ -z "$CVMFSRPMNAME" ]; then
+        echo "No matching cvmfs rpm found at $CVMFSURL" >&2
+        exit 1
+    fi
+    CVMFSRPMURL="$CVMFSURL/$CVMFSRPMNAME"
 fi
-# now that we can figure out the latest cvmfs version, download the
-#   corresponding cvmfs packages from CERN instead
-CVMFSVERSION="`echo "$PKGS"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
-CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
-CVMFSRPMNAME="`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*$MACH.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
-if [ -z "$CVMFSRPMNAME" ]; then
-    echo "No matching cvmfs rpm found at $CVMFSURL" >&2
-    exit 1
-fi
-URLS="$CVMFSURL/$CVMFSRPMNAME"
+URLS="$CVMFSRPMURL"
 PKGS=""
 
 if [ "$DISTTYPE" != "none" ]; then
@@ -248,7 +252,7 @@ if $INCLUDEHELPER; then
 fi
 
 FUSEPKGS=""
-CVMFSFUSE3URL="$CVMFSURL/`echo "$CVMFSRPMNAME"|sed 's/cvmfs-/cvmfs-fuse3-/'`"
+CVMFSFUSE3URL="`echo $CVMFSRPMURL|sed 's/cvmfs-/cvmfs-fuse3-/'`"
 if $SING; then
     URLS="$URLS $CVMFSFUSE3URL"
     if [ "$EL" -lt 8 ]; then
