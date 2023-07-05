@@ -1,3 +1,6 @@
+cvmfsexec-4.36 - 5 July 2023
+- Fix making rhel8-ppc64le distributions, which was broken in 4.34.
+
 cvmfsexec-4.35 - 21 June 2023
 - The previous fix was not actually able to distinguish between -s and
   not -s on el9.  So instead, makedist now always creates a file
