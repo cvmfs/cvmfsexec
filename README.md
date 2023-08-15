@@ -95,7 +95,7 @@ Executing a cvmfsexec file that is created in that way leaves behind a
 .cvmfsexec directory in the directory where it is run from, and running
 a singcvmfs file leaves behind a .singcvmfs directory.
 
-# cvmsexec command
+# cvmfsexec command
 
 The cvmfsexec command requires unprivileged user namespaces.  On RHEL8/9
 unprivileged user namepaces (and user namespace fuse mounts) are
