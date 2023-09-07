@@ -228,6 +228,8 @@ if [ "$ARCH" = "ppc64le" ]; then
         echo "Failed to get $ARCH cvmfs rpm from copr" >&2
         exit 1
     fi
+    CVMFSURL="$(dirname $CVMFSRPMURL)"
+    CVMFSRPMNAME="$(basename $CVMFSRPMURL)"
 else
     # Now that we can figure out the latest cvmfs version, download the
     #   corresponding cvmfs packages from CERN instead
@@ -241,8 +243,10 @@ else
     CVMFSRPMURL="$CVMFSURL/$CVMFSRPMNAME"
 fi
 URLS="$CVMFSRPMURL"
-PKGS=""
+# include cvmfs-libs
+URLS="$URLS $CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-libs-/'`"
 
+PKGS=""
 if [ "$DISTTYPE" != "none" ]; then
     PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
 fi
@@ -252,7 +256,7 @@ if $INCLUDEHELPER; then
 fi
 
 FUSEPKGS=""
-CVMFSFUSE3URL="`echo $CVMFSRPMURL|sed 's/cvmfs-/cvmfs-fuse3-/'`"
+CVMFSFUSE3URL="$CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`"
 if $SING; then
     URLS="$URLS $CVMFSFUSE3URL"
     if [ "$EL" -lt 8 ]; then
