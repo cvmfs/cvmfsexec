@@ -1,3 +1,4 @@
+cvmfsexec-4.37 - 7 September 2023
 - Include the cvmfs-libs rpm in the cvmfs distribution.  The rpm was
   added in cvmfs-2.10.0 and started being required by the cvmfs package
   in cvmfs-2.11.0.
