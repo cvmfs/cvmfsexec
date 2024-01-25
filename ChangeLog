@@ -1,3 +1,9 @@
+cvmfsexec-4.38 - 25 January 2024
+- Support scitokens with authenticated repositories.
+- Switch osg el8 & el9 to use the 23-main repositories instead of 3.6.
+- Skip cvmfs-libs if the cvmfs minor version is less than 10.
+- Fail when an rpm extraction fails.
+
 cvmfsexec-4.37 - 7 September 2023
 - Include the cvmfs-libs rpm in the cvmfs distribution.  The rpm was
   added in cvmfs-2.10.0 and started being required by the cvmfs package

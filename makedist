@@ -23,7 +23,7 @@ usage()
     echo " The -s option makes both operations work for singcvmfs instead"
     echo "   of cvmfsexec, and files are left in .singcvmfs"
     ) >&2
-    exit 1
+    exit 2
 }
 
 SING=false
@@ -155,18 +155,18 @@ case $1 in
         exit
         ;;
     osg)
-        REL=3.6
-        REPO=release
-        if [ $EL = 9 ]; then
-            # temporary while OSG is building their el9 support
-            REPO=development
+        if [ $EL -lt 8 ]; then
+            REL=3.6
+        else
+            REL=23-main
         fi
-        URL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64";;
+        REPO=release
+        BASEURL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64";;
     egi)
         OS=centos$EL
-        URL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
+        BASEURL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default|none)
-        URL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
+        BASEURL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
     *) usage;;
 esac
 DISTTYPE=$1
@@ -208,13 +208,13 @@ if [ "$ARCH" != "x86_64" ]; then
 fi
 
 URLS=""
-LIST="`curl -Ls $URL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
-PKGS="`echo "$LIST"|grep "^cvmfs-[0-9]"|tail -1`"
-if [ -z "$PKGS" ]; then
+BASELIST="`curl -Ls $BASEURL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
+CVMFSPKG="`echo "$BASELIST"|grep "^cvmfs-[0-9]"|tail -1`"
+if [ -z "$CVMFSPKG" ]; then
     if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
         echo "egi's UMD does not yet support rhel8" 2>&1
     else
-        echo "No cvmfs package found from $URL" >&2
+        echo "No cvmfs package found from $BASEURL" >&2
     fi
     exit 1
 fi
@@ -233,7 +233,7 @@ if [ "$ARCH" = "ppc64le" ]; then
 else
     # Now that we can figure out the latest cvmfs version, download the
     #   corresponding cvmfs packages from CERN instead
-    CVMFSVERSION="`echo "$PKGS"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
+    CVMFSVERSION="`echo "$CVMFSPKG"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
     CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
     CVMFSRPMNAME="`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*$MACH.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
     if [ -z "$CVMFSRPMNAME" ]; then
@@ -243,34 +243,77 @@ else
     CVMFSRPMURL="$CVMFSURL/$CVMFSRPMNAME"
 fi
 URLS="$CVMFSRPMURL"
-# include cvmfs-libs
-URLS="$URLS $CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-libs-/'`"
 
-PKGS=""
-if [ "$DISTTYPE" != "none" ]; then
-    PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
+MINORVERSION="`echo "$CVMFSVERSION"|cut -d. -f2`"
+if [ "$MINORVERSION" -ge 10 ]; then
+    # include cvmfs-libs
+    URLS="$URLS $CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-libs-/'`"
 fi
+
+if [ "$DISTTYPE" != "none" ]; then
+    CONFIGREPO="`echo "$BASELIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
+    if [ -z "$CONFIGREPO" ]; then
+        echo "cvmfs-config not found at $BASEURL!" >&2
+        exit 1
+    fi
+    URLS="$URLS $BASEURL/$CONFIGREPO"
+fi
+
+# return the url of the latest version of a package given
+# $1 - base repository url
+# $2 - package name
+# $3 - true if base url has one-character subdirectories, otherwise false
+latesturl()
+{
+    typeset URL="$1"
+    if [ "$3" = true ]; then
+        URL="${URL%/}"
+        URL="$URL/${2:0:1}"
+    fi
+    typeset PKG="$(curl -Ls "$URL"|grep ${2}-[0-9].*$ARCH|grep -v 32bit|grep -v mirrorlist|tail -1|sed 's/.*href="//;s/".*//')"
+    if [ -n "$PKG" ]; then
+        echo "$URL/$PKG"
+    fi
+}
 
 if $INCLUDEHELPER; then
-    PKGS="$PKGS `echo "$LIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
+    HELPER="`echo "$BASELIST"|grep "^cvmfs-x509-helper-[0-9]"|tail -1`"
+    if [ -z "$HELPER" ]; then
+        echo "cvmfs-x509-helper not found at $BASEURL!" >&2
+        exit 1
+    fi
+    URLS="$URLS $BASEURL/$HELPER"
+    if [ "$EL" -lt 8 ]; then
+        EPELURL="https://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages"
+    else
+        EPELURL="https://download.fedoraproject.org/pub/epel/$EL/Everything/$ARCH/Packages"
+    fi
+    URL="`latesturl $EPELURL scitokens-cpp true`"
+    if [ -z "$URL" ]; then
+        echo "No scitokens-cpp package found from $EPELURL" >&2
+        exit 1
+    fi
+    URLS="$URLS $URL"
 fi
 
-FUSEPKGS=""
+FUSESUBDIR=false
 CVMFSFUSE3URL="$CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`"
 if $SING; then
     URLS="$URLS $CVMFSFUSE3URL"
     if [ "$EL" -lt 8 ]; then
-        FUSEURL="https://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages/f"
+        FUSEURL="https://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages"
+        FUSESUBDIR=true
     elif [ "$EL" -eq 8 ]; then
         FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
     else
         FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
     fi
-    FUSEPKGS="`curl -Ls $FUSEURL|grep fuse3-libs-[0-9].*$ARCH|sed 's/.*href="//;s/".*//'`"
-    if [ -z "$FUSEPKGS" ]; then
+    URL="`latesturl $FUSEURL fuse3-libs $FUSESUBDIR`"
+    if [ -z "$URL" ]; then
         echo "No fuse3-libs package found from $FUSEURL" >&2
         exit 1
     fi
+    URLS="$URLS $URL"
 else
     if [ "$DISTRO" = suse ]; then
         FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
@@ -290,21 +333,13 @@ else
             URLS="$URLS $CVMFSFUSE3URL"
         fi
     fi
-    # if there's more than one href, don't take the last one
-    # that's needed for the SUSE page which has an extra "Details" link
-    FUSEPKGS="`curl -Ls $FUSEURL|grep $FUSELIB-[0-9].*$ARCH|grep -v 32bit|sed 's/\(.*href=.*\)href=.*/\1/'|sed 's/.*href="//;s/".*//'|head -1`"
-    if [ -z "$FUSEPKGS" ]; then
+    URL="`latesturl $FUSEURL $FUSELIB $FUSESUBDIR`"
+    if [ -z "$URL" ]; then
         echo "No $FUSELIB package found from $FUSEURL" >&2
         exit 1
     fi
+    URLS="$URLS $URL"
 fi
-
-for PKG in $PKGS; do
-    URLS="$URLS $URL/$PKG"
-done
-for PKG in $FUSEPKGS; do
-    URLS="$URLS $FUSEURL/$PKG"
-done
 
 if [ "$EL" -eq 7 ]; then
     # add fuse2fs only on EL7, it is standard elsewhere
@@ -323,7 +358,10 @@ VERSION_ID="$VERS"
 
 for U in $URLS; do
     echo "Extracting $U into $DIST"
-    curl -Ls "$U"|rpm2cpio -|cpio -idmv -f "*/.build-id*"
+    if ! curl -Ls "$U"|rpm2cpio -|cpio -idmv -f "*/.build-id*"; then
+        echo "Extracting $U failed!" >&2
+        exit 1
+    fi
 done
 find * -type l|while read LINK; do
     LINKDEST="`readlink $LINK`"
@@ -345,6 +383,32 @@ else
 fi
 echo "CVMFS_PAC_URLS=\"http://grid-wpad/wpad.dat;http://wpad/wpad.dat;$WLCGPACS\""
 ) >etc/cvmfs/default.local
+
+if $INCLUDEHELPER; then
+    echo "Wrapping authz helper commands"
+    HERE=$PWD
+    cd usr/libexec/cvmfs/authz
+    cat >.wrapper <<'!EOF!'
+#!/bin/bash
+BASEME=${0##*/}
+HERE="${0%/*}"
+if [[ "$HERE" != /* ]]; then
+    HERE="$PWD/$HERE"
+fi
+PARENT="${HERE%/*}"
+GGPARENT="${PARENT%/*/*}"
+if [ -n "$LD_LIBRARY_PATH" ]; then
+    LD_LIBRARY_PATH=":$LD_LIBRARY_PATH"
+fi
+LD_LIBRARY_PATH=$GGPARENT/lib64:$GGPARENT/lib$LD_LIBRARY_PATH exec -a $0 $HERE/.$BASEME "$@"
+!EOF!
+    chmod +x .wrapper
+    for CMD in *; do
+        mv $CMD .$CMD
+        ln -s .wrapper $CMD
+    done
+    cd $HERE
+fi
 
 echo "./.cvmfsexecdist"
 (
