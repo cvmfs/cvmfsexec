@@ -105,6 +105,7 @@ HERE="$(cd `dirname $0` && pwd)"
 DIST="$HERE/dist"
 
 DISTTYPE=""
+INCLUDEHELPER=true
 case $1 in
     -o)
         if [ $# != 2 ]; then
@@ -166,6 +167,7 @@ case $1 in
         OS=centos$EL
         BASEURL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
     default|none)
+        INCLUDEHELPER=false
         BASEURL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
     *) usage;;
 esac
@@ -200,7 +202,6 @@ baseurl=https://download.copr.fedorainfracloud.org/results/dwd/$1/epel-$EL-$ARCH
     rm -f $TMPF
 }
 
-INCLUDEHELPER=true
 if [ "$ARCH" != "x86_64" ]; then
     # There's no cvmfs-x509-helper yet for non-x86 architectures, and
     #  we're looking at x86_64 version repositories for the config rpm
