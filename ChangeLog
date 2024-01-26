@@ -1,3 +1,6 @@
+cvmfsexec-4.39 - 26 January 2024
+- Skip installing cvmfs-x509-helper with the "default" configuration.
+
 cvmfsexec-4.38 - 25 January 2024
 - Support scitokens with authenticated repositories.
 - Switch osg el8 & el9 to use the 23-main repositories instead of 3.6.
