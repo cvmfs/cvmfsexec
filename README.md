@@ -12,6 +12,9 @@ do this in 4 different ways:
    user's own file space.  That path can then be bindmounted at /cvmfs
    by a container manager such as
    [singularity](https://github.com/hpcng/singularity).
+   A big disadvantage compared to mode 3 below is that if the processes
+   are hard-killed (kill -9), mountpoints are left behind and difficult
+   to clean up.
 2. On systems where fusermount is available and unprivileged user
    namespaces are enabled, but unprivileged namespace fuse mounts are not
    available (in particular RHEL <=7.7 with
@@ -20,9 +23,9 @@ do this in 4 different ways:
    /cvmfs, and unmount them when it exits.  singularity may even be
    run unprivileged from cvmfs from within cvmfsexec (it has to run
    unprivileged because setuid-root does not work inside a user
-   namespace).  The main disadvantage is
-   that if the processes are hard-killed (kill -9), mountpoints are left
-   behind and are difficult to clean up.
+   namespace).  
+   This mode shares the disadvantage that mode 1 has compared to mode 3
+   in that if the processes are hard-killed, mountpoints are left behind.
 3. On systems where unprivileged namespace fuse mounts are available
    (newer kernels >= 4.18 as on RHEL8 or >= 3.10.0-1127 as on RHEL 7.8),
    the `cvmfsexec` command can entirely manage mounting and unmounting
@@ -95,7 +98,7 @@ Executing a cvmfsexec file that is created in that way leaves behind a
 .cvmfsexec directory in the directory where it is run from, and running
 a singcvmfs file leaves behind a .singcvmfs directory.
 
-# cvmfsexec command
+# cvmfsexec command (modes 2 and 3)
 
 The cvmfsexec command requires unprivileged user namespaces.  On RHEL8/9
 unprivileged user namepaces (and user namespace fuse mounts) are
@@ -174,7 +177,7 @@ cvmfsexec -m scratch.img --
 ```
 Then check out `/e2fs`.
 
-## Better cvmfsexec operation on newer kernels
+## Better cvmfsexec operation on newer kernels (mode 3)
 
 A caveat on older kernels (for example RHEL7.7 and older) is that a
 kill -9  of all the processes will not clean up the mounts, and they
@@ -191,7 +194,7 @@ $CVMFSMOUNT/$CVMFSUMOUNT still send a request to a parent process to
 mount/umount but it's not the original process, it's an intermediate
 process that has fakeroot access in the user namespace.
 
-## mountrepo/umountrepo without cvmfsexec
+## mountrepo/umountrepo without cvmfsexec (mode 1)
 
 When not using cvmfsexec, but with fusermount available use
 `mountrepo repository.name` to mount a repository.  Note that the osg
@@ -235,7 +238,7 @@ you can improve security further by adding:
 Singularity always has the equivalent protection enabled for the
 containers it runs.
 
-# singcvmfs command
+# singcvmfs command (mode 4)
 
 When a privileged setuid installation of singularity >= 3.4 is
 available, the `singcvmfs` command can be used to mount cvmfs
