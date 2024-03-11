@@ -140,14 +140,17 @@ be set to use cvmfs alien cache mode which doesn't use a cache manager,
 but the best approach is to start cvmfsexec from a pilot process and run
 only one pilot per machine.  If possible the cache should be on local
 disk, because otherwise the many file accesses can overwhelm a shared
-filesystem's metadata server.  If there is no local disk the next best
+filesystem's metadata server.  Also, many network filesystems types
+cannot handle the locks that cvmfs creates.
+If there is no local disk the next best
 option is to mount a filesystem separately for each worker
 node from a big enough file on the shared filesystem, or alternatively
 a RAM disk on the local node if there is sufficient RAM.
 The `-m` option (described in the next section) can mount that separate
 scratch filesystem for you in the cvmfsexec namespace.
 Otherwise, if the cache directory needs to be changed that can be done
-by setting CVMFS_CACHE_BASE in `dist/etc/cvmfs/default.local`.
+by setting CVMFS_CACHE_BASE in `dist/etc/cvmfs/default.local`,
+or you can just install the whole distribution in the local filesystem.
 
 ## Optionally mount a scratch filesystem
 
