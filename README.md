@@ -48,6 +48,8 @@ Scientific Linux, Rocky Linux, Alma Linux)
 and SUSE Linux Enterprise (version 15)
 and its derivatives (openSUSE Leap).  All of those support the
 x86_64 architecture, and RHEL8 also supports ppc64le and aarch64.
+Debian/Ubuntu probably could be supported but it would require some
+development in the `makedist` command.
 
 # Making the cvmfs distribution
 
@@ -63,7 +65,7 @@ will download from the `default` source but exclude the
 
 By default a distribution for `cvmfsexec` and `mountrepo/umountrepo` is
 created.  To instead make a distribution for `singcvmfs`, add the `-s`
-makedist option.  By default the distribution made will match the host
+makedist option.  By default the distribution made will match the 
 operating system it runs on, but another distribution can be selected
 with the `-m` option.  See the makedist usage for supported machine types.
 
@@ -261,7 +263,7 @@ singcvmfs exactly like singularity with one of its exec, instance, run,
 or shell commands (note: it cannot read an image from cvmfs).  For example,
 once you have [made a singcvmfs distribution](#making-the-cvmfs-distribution)
 the following should work (replace `centos:7` with a container matching
-the host's operating system):
+the operating system you're running on):
 
 ```
 $ export SINGCVMFS_REPOSITORIES="grid.cern.ch,atlas.cern.ch"
