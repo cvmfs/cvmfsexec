@@ -106,7 +106,7 @@ The cvmfsexec command requires unprivileged user namespaces.  On RHEL8/9
 unprivileged user namepaces (and user namespace fuse mounts) are
 available by default, but on RHEL7 they need to be enabled by setting a
 sysctl parameter as detailed in the
-[OSG unprivileged singularity instructions](https://opensciencegrid.org/docs/worker-node/install-singularity/#enabling-unprivileged-singularity).
+[OSG unprivileged apptainer instructions](https://osg-htc.org/docs/worker-node/install-apptainer/#enabling-unprivileged-apptainer).
 In addition cvmfsexec requires fusermount on kernels older than
 those that come with RHEL7.8.
 
