@@ -321,7 +321,7 @@ else
         FUSELIB=libfuse2
     else
         if [ "$EL" -lt 8 ]; then
-            FUSEURL="https://linux-mirrors.fnal.gov/linux/centos/$EL/os/$ARCH/Packages"
+            FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages/"
         elif [ "$EL" -eq 8 ]; then
             FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
         else

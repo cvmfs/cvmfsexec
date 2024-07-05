@@ -1,3 +1,6 @@
+cvmfsexec-4.40 - 5 July 2024
+- Switch to vault.centos.org for el7 fuse-libs package.
+
 cvmfsexec-4.39 - 26 January 2024
 - Skip installing cvmfs-x509-helper with the "default" configuration.
 
