@@ -11,7 +11,8 @@ do this in 4 different ways:
    `umountrepo` commands can be used to mount cvmfs repositories in the
    user's own file space.  That path can then be bindmounted at /cvmfs
    by a container manager such as
-   [singularity](https://github.com/hpcng/singularity).
+   [apptainer](https://github.com/apptainer/apptainer)
+   (formerly known as singularity).
    A big disadvantage compared to mode 3 below is that if the processes
    are hard-killed (kill -9), mountpoints are left behind and difficult
    to clean up.
@@ -20,7 +21,7 @@ do this in 4 different ways:
    available (in particular RHEL <=7.7 with
    `sysctl user.max_user_namespaces` > 0),
    the `cvmfsexec` command can mount cvmfs repositories, map them into
-   /cvmfs, and unmount them when it exits.  singularity may even be
+   /cvmfs, and unmount them when it exits.  apptainer may even be
    run unprivileged from cvmfs from within cvmfsexec (it has to run
    unprivileged because setuid-root does not work inside a user
    namespace).  
@@ -33,12 +34,13 @@ do this in 4 different ways:
    everything gets cleanly unmounted.  fusermount is not needed in this
    case.
 4. On systems that have no fusermount nor unprivileged user namespace
-   fuse mounts but do have a setuid installation of singularity >= 3.4,
+   fuse mounts but do have a setuid installation of singularity >= 3.4
+   or apptainer,
    an entirely separate command in this package `singcvmfs` can mount
-   cvmfs repositories inside a container using the `singularity
-   --fusemount` feature.  With singularity >= 3.6 and RHEL >= 7.8 and
-   unprivileged user namespaces enabled this
-   can also be used with unprivileged singularity.
+   cvmfs repositories inside a container using the `--fusemount` feature.
+   With singularity >= 3.6 and RHEL >= 7.8 and
+   unprivileged user namespaces enabled,
+   this can also be used with unprivileged singularity or apptainer.
 
 # Supported operating systems
 
@@ -50,6 +52,10 @@ and its derivatives (openSUSE Leap).  All of those support the
 x86_64 architecture, and RHEL8 also supports ppc64le and aarch64.
 Debian/Ubuntu probably could be supported but it would require some
 development in the `makedist` command.
+
+Even though RHEL7 is now officially End of Life, cvmfsexec will still
+support it for a while because some people continue to use it with
+extended support.
 
 # Making the cvmfs distribution
 
@@ -126,12 +132,13 @@ repositories from within the command with `$CVMFSUMOUNT repository.name`.
 If you want to use this feature and also
 invoke additional processes within the original process that are
 not trustworthy, such as user payloads that are invoked with
-`singularity --contain`, then close the $CVMFSEXEC_CMDFD file descriptor
+`--contain` option of singularity or apptainer,
+then close the $CVMFSEXEC_CMDFD file descriptor
 for those processes.  This can be done in bash with
 `exec {CVMFSEXEC_CMDFD}>&-`.
 
 Note that setuid-root programs do not work inside an unprivileged user
-namepace, so if you use singularity it has to be run unprivileged.
+namepace, so if you use singularity or apptainer it has to be run unprivileged.
 
 Cache considerations: by default cvmfsexec starts a cache manager
 process for all the cvmfs repositories it mounts, which means only one
@@ -240,8 +247,8 @@ you can improve security further by adding:
 ```
 --security-opt no-new-privileges
 ```
-Singularity always has the equivalent protection enabled for the
-containers it runs.
+Singularity and apptainer always have the equivalent protection enabled for the
+containers they run.
 
 # singcvmfs command (mode 4)
 
@@ -251,7 +258,7 @@ repositories inside a container.  With singularity >= 3.6 and
 RHEL >= 7.8 or a kernel >= 4.18
 with unprivileged user namespaces enabled
 this can also be used with an
-unprivileged non-setuid singularity installation.
+unprivileged non-setuid singularity or apptainer installation.
 The command line interface is different than cvmfsexec because it is
 designed for ease of use by end users on a laptop/desktop and as a
 drop-in replacement for singularity when it executes containers.
