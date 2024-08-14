@@ -325,7 +325,7 @@ if [ "$DISTRO" = suse ]; then
     if $USEFUSE3; then
         # hack to check if package is available in current dir
         if [ ! -f "$HERE/$CVMFSFUSE3RPMNAME" ]; then
-            echo "No cvmfs-fuse3 for suse15 available." >&2
+            echo "No cvmfs-fuse3 for SuSE available." >&2
             echo "Please provide custom-built $CVMFSFUSE3RPMNAME in the $HERE directory to continue." >&2
             exit 1
         else
