@@ -28,7 +28,7 @@ usage()
 }
 
 SING=false
-FUSE3=false
+USEFUSE3=false
 MACHTYPE=""
 while true; do
     if [ "$1" = "-s" ]; then
@@ -38,7 +38,7 @@ while true; do
         MACHTYPE="$2"
         shift 2
     elif [ "$1" = "-3" ]; then
-        FUSE3=true
+        USEFUSE3=true
         shift
     else
         break
@@ -310,11 +310,7 @@ FUSESUBDIR=false
 CVMFSFUSE3RPMNAME=`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`
 CVMFSFUSE3URL="$CVMFSURL/$CVMFSFUSE3RPMNAME"
 
-USEFUSE3=false
 if $SING; then
-    USEFUSE3=true
-fi
-if $FUSE3; then
     USEFUSE3=true
 fi
 if [ "$EL" -ge 9 ]; then
