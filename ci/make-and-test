@@ -1,0 +1,61 @@
+#!/bin/bash
+# Now running as an unprivileged user with user namespaces enabled in a
+# container and required packages installed. Make distributions and test.
+
+. /etc/os-release
+
+set -ex
+for DIST in default osg egi; do
+    if [ "$DIST" = egi ] && [[ "$VERSION_ID" != 7* ]]; then
+        # egi not yet supported for el8 or el9
+        continue
+    fi
+    rm -rf dist /tmp/cvmfsexec
+    : test makedist
+    ./makedist $DIST
+    : test mode 3
+    ./cvmfsexec atlas.cern.ch -- ls /cvmfs/atlas.cern.ch/repo
+    : test self-extracting distribution
+    ./makedist -o /tmp/cvmfsexec
+    /tmp/cvmfsexec atlas.cern.ch -- ls /cvmfs/atlas.cern.ch/repo
+    ./makedist -o /tmp/cvmfsexec
+    : test mode 1
+    rm -rf dist/var/lib/cvmfs/shared
+    ./mountrepo `cd dist/cvmfs; echo *config*`
+    ./mountrepo atlas.cern.ch
+    ls dist/cvmfs/atlas.cern.ch/repo
+    if [[ "$ID" == *suse* ]]; then
+        # the sle15 cvmfs suse build as of 2.11.5 does not support fuse3
+        ./umountrepo -a
+        continue
+    fi
+    : test mode 4
+    if [ ! -d apptainer ]; then
+        # get singularity or apptainer from oasis cvmfs
+        ./mountrepo oasis.opensciencegrid.org
+        if [[ "$VERSION_ID" == 7* ]]; then
+            APPT=dist/cvmfs/oasis.opensciencegrid.org/mis/singularity/current
+        else
+            APPT=dist/cvmfs/oasis.opensciencegrid.org/mis/apptainer/current
+        fi
+        mkdir apptainer
+        cp -r $APPT/`arch` $APPT/bin apptainer
+    fi
+    ./umountrepo -a
+    rm -rf dist /tmp/cvmfsexec
+    ./makedist -s $DIST
+    ./makedist -s -o /tmp/cvmfsexec
+    SINGCVMFS_REPOSITORIES=atlas.cern.ch PATH=$PATH:$PWD/apptainer/bin \
+        ./singcvmfs exec -cip docker://$DOCKER_HUB_URI ls /cvmfs/atlas.cern.ch/repo
+    if [[ "$VERSION_ID" == 8* ]]; then
+        : try to at least make other supported architecture distributions
+        for arch in aarch64 ppc64le; do
+            rm -rf dist /tmp/cvmfsexec
+            ./makedist -m rhel8-$arch $DIST
+            ./makedist -o /tmp/cvmfsexec
+            rm -rf dist /tmp/cvmfsexec
+            ./makedist -s -m rhel8-$arch $DIST
+            ./makedist -s -o /tmp/cvmfsexec
+        done
+    fi
+done

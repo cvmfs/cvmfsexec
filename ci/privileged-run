@@ -1,0 +1,25 @@
+#!/bin/bash
+# Running in a privileged container.  Install required packages and
+# switch to an unprivileged user to run the tests.
+
+set -ex
+if [ -f /usr/bin/zypper ]; then
+    # suse
+    zypper install -y tar gzip openssl-1_1 fuse fuse3
+else
+    # rhel
+    yum install -y procps-ng cpio findutils fuse fuse3
+    if [[ $DOCKER_HUB_URI == *:8 ]]; then
+        yum install -y yum-utils
+    fi
+fi
+
+# because host kernel is Ubuntu 24+, this enables user namespaces
+sysctl kernel.apparmor_restrict_unprivileged_userns=0
+
+# switch to an unprivileged user
+useradd -u 1000 --create-home -s /bin/bash testuser
+# leave .git as original owner for post job cleanup
+chown testuser .
+chown -R testuser *
+su testuser -c ci/make-and-test
