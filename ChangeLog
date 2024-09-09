@@ -1,3 +1,7 @@
+- Switch to the archive for el7 epel packages.
+- Add CI checks on every pull request for a fairly through test of
+  all the combinations of modes, distributions, and machine types.
+
 cvmfsexec-4.40 - 5 July 2024
 - Switch to vault.centos.org for el7 fuse-libs package.
 

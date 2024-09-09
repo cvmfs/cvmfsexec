@@ -185,6 +185,10 @@ fi
 echo "Making $SINGMSG$DISTTYPE distribution for $MACHTYPE"
 
 getcoprurl() {
+    if [ ! -f /usr/bin/yumdownloader ]; then
+        echo "yumdownloader not found, skipping trying to get $1 from copr" >&2
+        return
+    fi
     typeset TMPF=$(mktemp)
     typeset REPONAME=makedist-$1
     cat >$TMPF <<!EOF!
@@ -285,7 +289,7 @@ if $INCLUDEHELPER; then
     fi
     URLS="$URLS $BASEURL/$HELPER"
     if [ "$EL" -lt 8 ]; then
-        EPELURL="https://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages"
+        EPELURL="https://archives.fedoraproject.org/pub/archive/epel/$EL/$ARCH/Packages"
     else
         EPELURL="https://download.fedoraproject.org/pub/epel/$EL/Everything/$ARCH/Packages"
     fi
@@ -302,7 +306,7 @@ CVMFSFUSE3URL="$CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`"
 if $SING; then
     URLS="$URLS $CVMFSFUSE3URL"
     if [ "$EL" -lt 8 ]; then
-        FUSEURL="https://download.fedoraproject.org/pub/epel/$EL/$ARCH/Packages"
+        FUSEURL="https://archives.fedoraproject.org/pub/archive/epel/$EL/$ARCH/Packages"
         FUSESUBDIR=true
     elif [ "$EL" -eq 8 ]; then
         FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"

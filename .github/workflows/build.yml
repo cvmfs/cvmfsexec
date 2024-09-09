@@ -1,0 +1,43 @@
+name: Make distributions and test
+
+on:
+  # run workflows on main master and release/** branches
+  push:
+    branches:
+      - main
+      - master
+      - release/**
+  # run workflows on pull requests against the same branches
+  pull_request:
+    branches:
+      - main
+      - master
+      - release/**
+
+# automatically cancel redundant builds
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  makeandtest:
+    name: ${{ matrix.distro }}:${{ matrix.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: eurolinux/centos-7
+            version: latest
+          - distro: rockylinux
+            version: 8
+          - distro: rockylinux
+            version: 9
+          - distro: opensuse/leap
+            version: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v3
+
+      - name: Run make-and-test under docker
+        run: ./ci/docker-run ${{ matrix.distro }}:${{ matrix.version }}
