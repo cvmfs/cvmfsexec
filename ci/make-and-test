@@ -5,6 +5,17 @@
 . /etc/os-release
 
 set -ex
+if [[ "$VERSION_ID" = 7* ]]; then
+    # installing yum-utils for yumdownloader to get fuse2fs fails, skip it
+    CACHEPAT="/var/lib/cvmfs"
+else
+    truncate -s 6G scratch.img
+    mkdir -p scratch/shared
+    /sbin/mkfs.ext3 -F -O ^has_journal -d scratch scratch.img
+    # for mode 4
+    export SINGCVMFS_CACHEIMAGE=scratch.img
+    CACHEPAT="/var/lib/cvmfs.*fuse"
+fi
 for DIST in default osg egi; do
     if [ "$DIST" = egi ] && [[ "$VERSION_ID" != 7* ]]; then
         # egi not yet supported for el8 or el9
@@ -17,8 +28,11 @@ for DIST in default osg egi; do
     ./cvmfsexec atlas.cern.ch -- ls /cvmfs/atlas.cern.ch/repo
     : test self-extracting distribution
     ./makedist -o /tmp/cvmfsexec
-    /tmp/cvmfsexec atlas.cern.ch -- ls /cvmfs/atlas.cern.ch/repo
-    ./makedist -o /tmp/cvmfsexec
+    if [ -f scratch.img ]; then
+        /tmp/cvmfsexec -m $PWD/scratch.img atlas.cern.ch -- ls /cvmfs/atlas.cern.ch/repo /e2fs/lost+found
+    else
+        /tmp/cvmfsexec atlas.cern.ch -- ls /cvmfs/atlas.cern.ch/repo
+    fi
     : test mode 1
     rm -rf dist/var/lib/cvmfs/shared
     ./mountrepo `cd dist/cvmfs; echo *config*`
@@ -46,7 +60,8 @@ for DIST in default osg egi; do
     ./makedist -s $DIST
     ./makedist -s -o /tmp/cvmfsexec
     SINGCVMFS_REPOSITORIES=atlas.cern.ch PATH=$PATH:$PWD/apptainer/bin \
-        ./singcvmfs exec -cip docker://$DOCKER_HUB_URI ls /cvmfs/atlas.cern.ch/repo
+        ./singcvmfs exec -cip docker://$DOCKER_HUB_URI sh -c \
+        "ls /cvmfs/atlas.cern.ch/repo && mount|grep $CACHEPAT"
     if [[ "$VERSION_ID" == 8* ]]; then
         : try to at least make other supported architecture distributions
         for arch in aarch64 ppc64le; do
