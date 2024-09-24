@@ -62,7 +62,7 @@ for DIST in default osg egi; do
     SINGCVMFS_REPOSITORIES=atlas.cern.ch PATH=$PATH:$PWD/apptainer/bin \
         ./singcvmfs exec -cip docker://$DOCKER_HUB_URI sh -c \
         "ls /cvmfs/atlas.cern.ch/repo && mount|grep $CACHEPAT"
-    if [[ "$VERSION_ID" == 8* ]]; then
+    if [[ "$VERSION_ID" == 8* ]] || [[ "$VERSION_ID" == 9* ]]; then
         : try to at least make other supported architecture distributions
         for arch in aarch64 ppc64le; do
             rm -rf dist /tmp/cvmfsexec

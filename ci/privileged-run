@@ -5,11 +5,11 @@
 set -ex
 if [ -f /usr/bin/zypper ]; then
     # suse
-    zypper install -y tar gzip openssl-1_1 fuse fuse3 e2fsprogs fuse2fs
+    zypper install -y tar gzip procps openssl-1_1 fuse fuse3 e2fsprogs fuse2fs
 else
     # rhel
     yum install -y procps-ng cpio findutils fuse fuse3 e2fsprogs
-    if [[ $DOCKER_HUB_URI == *:8 ]]; then
+    if [[ $DOCKER_HUB_URI == *:8 ]] || [[ $DOCKER_HUB_URI == *:9 ]]; then
         yum install -y yum-utils
     fi
 fi
