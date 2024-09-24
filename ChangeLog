@@ -1,3 +1,8 @@
+cvmfsexec-4.42 - 24 September 2024
+- Add rhel9-aarch64 and rhel9-ppc64le machine types.
+- In makedist help, split machine types from different distributions
+  onto different lines.
+
 cvmfsexec-4.41 - 9 September 2024
 - Switch to the archive for el7 epel packages.
 - Add CI checks on every pull request for a fairly through test of
