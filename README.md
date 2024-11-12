@@ -352,3 +352,7 @@ $ truncate -s 6G scratch.img
 $ mkdir -p tmp/shared
 $ mkfs.ext3 -F -O ^has_journal -d tmp scratch.img
 ```
+
+By default the cvmfs logs are written to a top-level `log` directory, alongside
+the top-level `dist` directory. The variable `SINGCVMFS_LOGDIR` can be used to
+write them to a different directory, which will be created if it doesn't exist.

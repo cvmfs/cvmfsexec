@@ -1,3 +1,6 @@
+- Add the variable SINGCVMFS_LOGDIR to override the location of the
+  cvmfs logs.
+
 cvmfsexec-4.42 - 24 September 2024
 - Add rhel9-aarch64 and rhel9-ppc64le machine types.
 - In makedist help, split machine types from different distributions
