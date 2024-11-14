@@ -40,6 +40,7 @@ Optional environment variables:
     SINGCVMFS_OPTSFILE      CVMFS options file (default.local)
                             - should set at least CVMFS_HTTP_PROXY
     SINGCVMFS_SINGOPTS      Extra singularity command options
+    SINGCVMFS_LOGDIR        Directory for the cvmfs logs
     SINGCVMFS_LOGLEVEL      Set to debug to enable cvmfs debugging
 !EOF!
     exit 1
@@ -103,7 +104,11 @@ fi
 
 echo "CVMFS_NFILES=`ulimit -Hn`" >etc/cvmfs/default.d/00-nfiles.conf
 echo "CVMFS_USYSLOG=/var/log/cvmfs/@fqrn@.log" >etc/cvmfs/default.d/00-usyslog.conf
-LOGDIR=$HERE/log
+if [ -n "$SINGCVMFS_LOGDIR" ]; then
+  LOGDIR=$SINGCVMFS_LOGDIR
+else
+  LOGDIR=$HERE/log
+fi
 mkdir -p $LOGDIR
 SINGULARITY_BINDPATH="$SINGULARITY_BINDPATH,$LOGDIR:/var/log/cvmfs"
 
