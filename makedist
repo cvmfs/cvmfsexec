@@ -179,11 +179,13 @@ case $1 in
     osg)
         if [ $EL -lt 8 ]; then
             REL=3.6
+            EXT=""
         else
             REL=23-main
+            EXT="/Packages/c"
         fi
         REPO=release
-        BASEURL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64";;
+        BASEURL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64$EXT";;
     egi)
         OS=centos$EL
         BASEURL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
