@@ -1,3 +1,5 @@
+cvmfsexec-4.43 - 6 January 2025
+- Adjust the URL for downloading osg packages after the layout changed.
 - Add the variable SINGCVMFS_LOGDIR to override the location of the
   cvmfs logs.
 
