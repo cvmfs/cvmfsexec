@@ -189,6 +189,10 @@ cvmfsexec -m scratch.img --
 ```
 Then check out `/e2fs`.
 
+NOTE: although this functions easily and well, fuse2fs performance is
+not great so if a more performant option is available that is likely
+to be preferred.
+
 ## Better cvmfsexec operation on newer kernels (mode 3)
 
 A caveat on older kernels (for example RHEL7.7 and older) is that a
