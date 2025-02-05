@@ -1,3 +1,4 @@
+cvmfsexec-4.44 - 5 February 2025
 - Add translations in makedist from debian 11 & 12 and ubuntu 22 & 24 to
   rhel8 & rhel9.
 
