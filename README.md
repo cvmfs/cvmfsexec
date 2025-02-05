@@ -256,7 +256,8 @@ containers they run.
 
 # singcvmfs command (mode 4)
 
-When a privileged setuid installation of singularity >= 3.4 is
+When a privileged setuid installation of singularity >= 3.4 or
+any version of apptainer is
 available, the `singcvmfs` command can be used to mount cvmfs
 repositories inside a container.  With singularity >= 3.6 and
 RHEL >= 7.8 or a kernel >= 4.18
