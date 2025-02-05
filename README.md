@@ -48,10 +48,13 @@ Operating systems currently supported by this package are Red Hat
 Enterprise Linux (versions 7, 8, and 9) and its derivatives (CentOS,
 Scientific Linux, Rocky Linux, Alma Linux)
 and SUSE Linux Enterprise (version 15)
-and its derivatives (openSUSE Leap).  All of those support the
-x86_64 architecture, and RHEL8 also supports ppc64le and aarch64.
-Debian/Ubuntu probably could be supported but it would require some
-development in the `makedist` command.
+and its derivatives (openSUSE Leap).  
+Debian (11 and 12) and Ubuntu (22.04 & 24.04) are also supported
+with modes 1 to 3,
+by using rhel8 and rhel9 binaries;
+those binaries aren't compatible enough for mode 4, however.
+All of those support the x86_64 architecture,
+and rhel8 also supports ppc64le and aarch64.
 
 Even though RHEL7 is now officially End of Life, cvmfsexec will still
 support it for a while because some people continue to use it with
@@ -68,6 +71,12 @@ configuration rpm from one of those three sources. Note: `egi` does not
 currently provide rpms for RHEL8 or 9. Additionally, specifying `none`
 will download from the `default` source but exclude the
 `cvmfs-config-default` package.
+
+The `makedist` command does require 3 tools that are not always
+installed on Linux distributions: `curl`, `rpm2cpio`, and `cpio`.
+If those cannot be installed, you should be able to run the makedist
+command on a host that does have them and copy the distribution to
+the system where you need it.
 
 By default a distribution for `cvmfsexec` and `mountrepo/umountrepo` is
 created.  To instead make a distribution for `singcvmfs`, add the `-s`

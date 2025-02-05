@@ -6,6 +6,7 @@
 #
 
 SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64"
+REQUIREDCMDS="curl rpm2cpio cpio"
 
 supportedtypes() {
     typeset LASTDISTRO=""
@@ -35,6 +36,7 @@ usage()
     echo "   The -m option selects machinetype for the distribution."
     echo "   The default is the current machine.  Supported types:"
     supportedtypes "     "
+    echo " Debian and Ubuntu hosts get translated to corresponding rhel types."
     echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
     echo "   given file name that self extracts and executes cvmfsexec."
     echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
@@ -67,6 +69,8 @@ distroname() {
         case " $ID $ID_LIKE " in
             *" rhel "*) echo rhel;;
             *" suse "*) echo suse;;
+            *" ubuntu "*) echo ubuntu;;
+            *" debian "*) echo debian;;
             *)  echo "Operating system in /etc/os-release not supported" >&2
                 exit 2;;
         esac
@@ -104,6 +108,28 @@ VERS="`distroversion`"
 ARCH="`distroarch`"
 
 if [ -z "$MACHTYPE" ]; then
+    if [ "$DISTRO" = "debian" ]; then
+        if $SING; then
+            echo "debian not supported with -s" >&2
+            exit 2
+        fi
+        case "$VERS" in
+            11) DISTRO=rhel; VERS=8;;
+            12) DISTRO=rhel; VERS=9;;
+            *)  echo "debian$VERS not supported, only 11 & 12 are" >&2
+                exit 2;;
+        esac
+    elif [ "$DISTRO" = "ubuntu" ]; then
+        if $SING; then
+            echo "ubuntu not supported with -s" >&2
+            exit 2
+        fi
+        case "$VERS" in
+            22|24) DISTRO=rhel; VERS=9;;
+            *)  echo "ubuntu$VERS not supported, only 22 & 24 are" >&2
+                exit 2;;
+        esac
+    fi
     MACHTYPE=$DISTRO$VERS-$ARCH
 fi
 
@@ -119,6 +145,17 @@ MACH=el$EL
 if [ "$DISTRO" = "suse" ]; then
     EL=7  # we get some suse stuff from rhel7
     MACH=sle
+fi
+
+MISSINGCMDS=""
+for CMD in $REQUIREDCMDS; do 
+	if [ -z "$(type -p "$CMD")" ]; then
+		MISSINGCMDS="$MISSINGCMDS $CMD"
+	fi
+done
+if [ -n "$MISSINGCMDS" ]; then
+    echo "Required command(s)$MISSINGCMDS not found" >&2
+    exit 2
 fi
 
 HERE="$(cd `dirname $0` && pwd)"
