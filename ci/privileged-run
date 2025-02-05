@@ -6,6 +6,10 @@ set -ex
 if [ -f /usr/bin/zypper ]; then
     # suse
     zypper install -y tar gzip procps openssl-1_1 fuse fuse3 e2fsprogs fuse2fs
+elif [ -f /usr/bin/apt ]; then
+    # debian or ubuntu
+    apt-get update
+    apt-get install -y procps curl rpm2cpio cpio fuse3 fuse2fs
 else
     # rhel
     yum install -y procps-ng cpio findutils fuse fuse3 e2fsprogs
@@ -18,7 +22,7 @@ fi
 sysctl kernel.apparmor_restrict_unprivileged_userns=0
 
 # switch to an unprivileged user
-useradd -u 1000 --create-home -s /bin/bash testuser
+useradd -u 1001 --create-home -s /bin/bash testuser
 # leave .git as original owner for post job cleanup
 chown testuser .
 chown -R testuser *

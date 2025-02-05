@@ -34,6 +34,14 @@ jobs:
             version: 9
           - distro: opensuse/leap
             version: 15
+          - distro: debian
+            version: 11
+          - distro: debian
+            version: 12
+          - distro: ubuntu
+            version: 22.04
+          - distro: ubuntu
+            version: 24.04
     runs-on: ubuntu-24.04
     steps:
       - name: Get source code

@@ -57,6 +57,10 @@ for DIST in default osg egi; do
     fi
     ./umountrepo -a
     rm -rf dist /tmp/cvmfsexec
+    if [ "$ID" = debian ] || [ "$ID" = ubuntu ]; then
+        # skip singcvmfs test on debian & ubuntu
+        continue
+    fi
     ./makedist -s $DIST
     ./makedist -s -o /tmp/cvmfsexec
     SINGCVMFS_REPOSITORIES=atlas.cern.ch PATH=$PATH:$PWD/apptainer/bin \
