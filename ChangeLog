@@ -1,3 +1,7 @@
+cvmfsexec-4.45 - 5 March 2025
+- Change to try downloading cvmfs packages from cvmrepo.s3.cern.ch and
+  fall back to cvmrepo.web.cern.ch if that doesn't work.
+
 cvmfsexec-4.44 - 5 February 2025
 - Add translations in makedist from debian 11 & 12 and ubuntu 22 & 24 to
   rhel8 & rhel9.
