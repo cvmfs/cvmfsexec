@@ -79,6 +79,19 @@ distroname() {
     fi
 }
 
+# return the distroname as encountered in yum package repo URLS,
+# i.e  https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/9/
+distroname_yum() {
+    case " $1 " in
+        *" ubuntu "*) echo EL;;
+        *" debian "*) echo EL;;
+        *" rhel "*) echo EL;;
+        *" suse "*) echo suse;;
+        *)  echo "Distro name $1 not supported" >&2
+            exit 2;;
+    esac
+}
+
 distroversion() {
     if [ -n "$MACHTYPE" ]; then
         echo "$MACHTYPE"|sed 's/^[^0-9]*\([0-9]*\)-.*/\1/'
@@ -102,6 +115,19 @@ distroarch() {
         arch
     fi
 }
+
+# download and parse the listing from a package server (give URL as 1st argument)
+get_cvmfs_pkg_list() {
+    echo "$(curl -Ls $1/|grep "cvmfs-"|sed 's/.*href="//;s/".*//;s,^\./,,')"
+}
+
+
+get_cvmfs_latest_version_from_pkg_list() {
+    CVMFSPKG="`echo "$1"|grep "^cvmfs-[0-9]"|tail -1`"
+    CVMFSVERSION="`echo "$CVMFSPKG"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
+    echo $CVMFSVERSION
+}
+
 
 DISTRO="`distroname`"
 VERS="`distroversion`"
@@ -144,7 +170,7 @@ EL=$VERS
 MACH=el$EL
 if [ "$DISTRO" = "suse" ]; then
     EL=7  # we get some suse stuff from rhel7
-    MACH=sle
+    MACH=sle$VERS
 fi
 
 MISSINGCMDS=""
@@ -222,16 +248,26 @@ case $1 in
             EXT="/Packages/c"
         fi
         REPO=release
-        BASEURL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64$EXT";;
+        BASEURL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64$EXT"
+        BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     egi)
         OS=centos$EL
-        BASEURL="https://repository.egi.eu/sw/production/umd/4/$OS/x86_64/updates";;
+        if [ $EL -gt 8 ]; then
+             BASEURL="https://repository.egi.eu/sw/production/umd/5/al9/release/x86_64/"
+        elif [ $EL -eq 7 ]; then
+            BASEURL="https://repository.egi.eu/sw/production/umd/4/centos7/x86_64/updates"
+        else
+          echo "ERROR: unsupported OS for egi! only centos7, almalinux9 supported." >&2
+          exit 1
+        fi 
+        BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     default|none)
         INCLUDEHELPER=false
         BASEURL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
     *) usage;;
 esac
 DISTTYPE=$1
+
 
 if [ -d $DIST ]; then
     echo "$DIST already exists" >&2
@@ -271,20 +307,18 @@ if [ "$ARCH" != "x86_64" ]; then
     #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
 fi
-
-URLS=""
-BASELIST="`curl -Ls $BASEURL/|grep "cvmfs-"|sed 's/.*href="//;s/".*//'`"
-CVMFSPKG="`echo "$BASELIST"|grep "^cvmfs-[0-9]"|tail -1`"
-if [ -z "$CVMFSPKG" ]; then
-    if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
-        echo "egi's UMD does not yet support rhel8" 2>&1
-    else
-        echo "No cvmfs package found from $BASEURL" >&2
-    fi
+if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
+    echo "egi's UMD does not yet support rhel8" 2>&1
     exit 1
 fi
 
+
+URLS=""
 CVMFSURL=""
+CVMFSRPMURL=""
+CVMFS_BASEURL_MIRROR1="https://cvmrepo.s3.cern.ch/cvmrepo"
+CVMFS_BASEURL_MIRROR2="https://cvmrepo.web.cern.ch/cvmrepo"
+CVMFS_BASEURL=$CVMFS_BASEURL_MIRROR1
 if [ "$ARCH" = "ppc64le" ]; then
     # Grab cvmfs package from copr, using yumdownloader to calculate
     #  the URL
@@ -297,32 +331,47 @@ if [ "$ARCH" = "ppc64le" ]; then
     CVMFSRPMNAME="$(basename $CVMFSRPMURL)"
     CVMFSVERSION="`echo "$CVMFSRPMNAME" 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
 else
-    # Now that we can figure out the latest cvmfs version, download the
-    #   corresponding cvmfs packages from CERN instead
-    CVMFSVERSION="`echo "$CVMFSPKG"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
-    CVMFSURL="https://ecsft.cern.ch/dist/cvmfs/cvmfs-$CVMFSVERSION"
-    CVMFSRPMNAME="`curl -Ls $CVMFSURL/|grep "cvmfs-$CVMFSVERSION-.*$MACH.*\.$ARCH"|sed 's/.*href="//;s/".*//'|tail -1`"
-    if [ -z "$CVMFSRPMNAME" ]; then
-        echo "No matching cvmfs rpm found at $CVMFSURL" >&2
+    # Get  CVMFS package download urls from CERN yum repo ( with possible fallback )
+    DISTRO_YUM="`distroname_yum $DISTRO`"
+    CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
+    # for the listing, we need to query the "s3-website" variant of the s3 url
+    CVMFS_BASELIST="$(get_cvmfs_pkg_list ${CVMFSURL/cvmrepo.s3/cvmrepo.s3-website})"
+    CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list $CVMFS_BASELIST)"
+    if [ -z "CVMFSVERSION" ]; then
+      echo "WARN: Couldn't find package listing in mirror $CVMFSURL, switching over.." >&2
+      CVMFS_BASEURL="$CVMFS_BASE_URL_MIRROR2"
+      CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
+      CVMFS_BASELIST="$(get_cvmfs_pkg_list $CVMFSURL)"
+      CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list $CVMFS_BASELIST)"
+      if [ -z "CVMFSVERSION" ]; then
+        echo "ERROR: Couldn't find package listing in mirror $CVMFS_BASEURL, and no mirrors left! " >&2
         exit 1
+      fi
     fi
+    CVMFSRPMNAME="cvmfs-$CVMFSVERSION-1.$MACH.$ARCH.rpm"
     CVMFSRPMURL="$CVMFSURL/$CVMFSRPMNAME"
 fi
-URLS="$CVMFSRPMURL"
 
+CVMFSRPMURL_LIBS=""
 MINORVERSION="`echo "$CVMFSVERSION"|cut -d. -f2`"
 if [ "$MINORVERSION" -ge 10 ]; then
     # include cvmfs-libs
-    URLS="$URLS $CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-libs-/'`"
+    CVMFSRPMURL_LIBS="$CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-libs-/'`"
 fi
 
+URLS="$URLS $CVMFSRPMURL $CVMFSRPMURL_LIBS"
+
 if [ "$DISTTYPE" != "none" ]; then
-    CONFIGREPO="`echo "$BASELIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
-    if [ -z "$CONFIGREPO" ]; then
-        echo "cvmfs-config not found at $BASEURL!" >&2
-        exit 1
+    if [ "$DISTTYPE" != "default" ]; then
+        CONFIGREPO="`echo "$BASELIST"|grep "^cvmfs-config-$DISTTYPE-[0-9]"|tail -1`"
+        if [ -z "$CONFIGREPO" ]; then
+            echo "cvmfs-config not found at $BASEURL!" >&2
+            exit 1
+        fi
+        URLS="$URLS $BASEURL/$CONFIGREPO"
+    else 
+        URLS="$URLS $CVMFS_BASEURL/yum/cvmfs-config-default-latest.noarch.rpm"
     fi
-    URLS="$URLS $BASEURL/$CONFIGREPO"
 fi
 
 # return the url of the latest version of a package given
