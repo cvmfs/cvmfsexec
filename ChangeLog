@@ -1,3 +1,7 @@
+- Go back to selecting the cvmfs version from the egi and osg distribution.
+- Properly sort the cvmfs version number from the downloaded list of packages.
+- For osg use 24-main instead of 23-main.
+
 cvmfsexec-4.45 - 5 March 2025
 - Change to try downloading cvmfs packages from cvmrepo.s3.cern.ch and
   fall back to cvmrepo.web.cern.ch if that doesn't work.

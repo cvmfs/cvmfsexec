@@ -123,9 +123,7 @@ get_cvmfs_pkg_list() {
 
 
 get_cvmfs_latest_version_from_pkg_list() {
-    CVMFSPKG="`echo "$1"|grep "^cvmfs-[0-9]"|tail -1`"
-    CVMFSVERSION="`echo "$CVMFSPKG"|sed 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
-    echo $CVMFSVERSION
+    echo "$1"|sed -n 's/.*cvmfs-\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'|sort -t. -k 1,1n -k 2,2n -k 3,3n|tail -1
 }
 
 
@@ -244,7 +242,7 @@ case $1 in
             REL=3.6
             EXT=""
         else
-            REL=23-main
+            REL=24-main
             EXT="/Packages/c"
         fi
         REPO=release
@@ -263,7 +261,9 @@ case $1 in
         BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     default|none)
         INCLUDEHELPER=false
-        BASEURL="https://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64";;
+        BASEURL="https://cvmrepo.s3.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64"
+        # for the listing, we need to query the "s3-website" variant of the s3 url
+        BASELIST="$(get_cvmfs_pkg_list ${BASEURL/cvmrepo.s3/cvmrepo.s3-website})";;
     *) usage;;
 esac
 DISTTYPE=$1
@@ -331,18 +331,17 @@ if [ "$ARCH" = "ppc64le" ]; then
     CVMFSRPMNAME="$(basename $CVMFSRPMURL)"
     CVMFSVERSION="`echo "$CVMFSRPMNAME" 's/.*cvmfs-\([^-]*\)-.*/\1/'`"
 else
-    # Get  CVMFS package download urls from CERN yum repo ( with possible fallback )
+    # Get CVMFS package download urls from CERN yum repo ( with possible fallback )
+    # but using the version number found from the base distribution
     DISTRO_YUM="`distroname_yum $DISTRO`"
     CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
-    # for the listing, we need to query the "s3-website" variant of the s3 url
-    CVMFS_BASELIST="$(get_cvmfs_pkg_list ${CVMFSURL/cvmrepo.s3/cvmrepo.s3-website})"
-    CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list $CVMFS_BASELIST)"
+    CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
     if [ -z "CVMFSVERSION" ]; then
-      echo "WARN: Couldn't find package listing in mirror $CVMFSURL, switching over.." >&2
+      echo "WARN: Couldn't find package listing in $BASEURL, switching to backup.." >&2
       CVMFS_BASEURL="$CVMFS_BASE_URL_MIRROR2"
       CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
       CVMFS_BASELIST="$(get_cvmfs_pkg_list $CVMFSURL)"
-      CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list $CVMFS_BASELIST)"
+      CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$CVMFS_BASELIST")"
       if [ -z "CVMFSVERSION" ]; then
         echo "ERROR: Couldn't find package listing in mirror $CVMFS_BASEURL, and no mirrors left! " >&2
         exit 1
