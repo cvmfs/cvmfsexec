@@ -379,6 +379,7 @@ fi
 # $1 - base repository url
 # $2 - package name
 # $3 - true if base url has one-character subdirectories, otherwise false
+LATESTRETRY=0
 latesturl()
 {
     typeset URL="$1"
@@ -388,7 +389,14 @@ latesturl()
     fi
     typeset PKG="$(curl $CURLOPTS "$URL"|grep ${2}-[0-9].*$ARCH|grep -v 32bit|grep -v mirrorlist|tail -1|sed 's/.*href="//;s/".*//')"
     if [ -n "$PKG" ]; then
+        LATESTRETRY=0
         echo "$URL/$PKG"
+    elif [ "$LATESTRETRY" -lt 3 ]; then
+        let LATESTRETRY=$LATESTRETRY+1
+        latesturl "$URL" "$2" false
+    else
+        LATESTRETRY=0
+        return 1
     fi
 }
 
