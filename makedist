@@ -8,6 +8,8 @@
 SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64"
 REQUIREDCMDS="curl rpm2cpio cpio"
 
+CURLOPTS="--connect-timeout 5 -Y 125000 -y 10 -LsS"
+
 supportedtypes() {
     typeset LASTDISTRO=""
     typeset TYPES=""
@@ -118,7 +120,7 @@ distroarch() {
 
 # download and parse the listing from a package server (give URL as 1st argument)
 get_cvmfs_pkg_list() {
-    echo "$(curl -Ls $1/|grep "cvmfs-"|sed 's/.*href="//;s/".*//;s,^\./,,')"
+    echo "$(curl $CURLOPTS $1/|grep "cvmfs-"|sed 's/.*href="//;s/".*//;s,^\./,,')"
 }
 
 
@@ -384,7 +386,7 @@ latesturl()
         URL="${URL%/}"
         URL="$URL/${2:0:1}"
     fi
-    typeset PKG="$(curl -Ls "$URL"|grep ${2}-[0-9].*$ARCH|grep -v 32bit|grep -v mirrorlist|tail -1|sed 's/.*href="//;s/".*//')"
+    typeset PKG="$(curl $CURLOPTS "$URL"|grep ${2}-[0-9].*$ARCH|grep -v 32bit|grep -v mirrorlist|tail -1|sed 's/.*href="//;s/".*//')"
     if [ -n "$PKG" ]; then
         echo "$URL/$PKG"
     fi
@@ -472,10 +474,15 @@ VERSION_ID="$VERS"
 
 for U in $URLS; do
     echo "Extracting $U into $DIST"
-    if ! curl -Ls "$U"|rpm2cpio -|cpio -idmv -f "*/.build-id*"; then
-        echo "Extracting $U failed!" >&2
-        exit 1
-    fi
+    RETRY=0
+    while ! curl $CURLOPTS "$U"|rpm2cpio -|cpio -idmv -f "*/.build-id*"; do
+        let RETRY+=1
+        if [ "$RETRY" -ge 3 ]; then
+            echo "Extracting $U failed after $RETRY attempts, giving up!" >&2
+            exit 1
+        fi
+        echo "failed, retrying ..." >&2
+    done
 done
 find * -type l|while read LINK; do
     LINKDEST="`readlink $LINK`"
