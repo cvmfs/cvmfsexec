@@ -167,7 +167,7 @@ fi
 EL=$VERS
 MACH=el$EL
 if [ "$DISTRO" = "suse" ]; then
-    EL=7  # we get some suse stuff from rhel7
+    EL=8  # we get some suse stuff from rhel8
     MACH=sle$VERS
 fi
 
