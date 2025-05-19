@@ -42,6 +42,10 @@ do this in 4 different ways:
    unprivileged user namespaces enabled,
    this can also be used with unprivileged singularity or apptainer.
 
+In addition, this package contains a related tool called
+[bindexec](#bindexec) which starts a new user namespace with given
+bind mounts added.
+
 # Supported operating systems
 
 Operating systems currently supported by this package are Red Hat
@@ -370,3 +374,41 @@ $ mkfs.ext3 -F -O ^has_journal -d tmp scratch.img
 By default the cvmfs logs are written to a top-level `log` directory, alongside
 the top-level `dist` directory. The variable `SINGCVMFS_LOGDIR` can be used to
 write them to a different directory, which will be created if it doesn't exist.
+
+# bindexec
+
+As a bonus, this package also includes a separate tool called `bindexec`
+that accepts any set of bind mounts to add into a new unprivileged user
+mount namespace.  The usage is much like `cvmfsexec` except that instead
+of cvmfs repository names you give it `src:dest` pairs where `src` is a
+source directory or file and `dest` is a destination path.  For example:
+
+```
+$ bindexec /etc/motd:/var/lib/mydir/motd -- ls /var/lib/mydir
+motd
+```
+
+Like `cvmfsexec`, if no command is supplied after `--` it runs an
+interactive shell.
+
+Bind mounts require target destinations to exist, but if they are
+missing `bindexec` will automatically create them.  This requires the
+fuse-overlayfs command to be in the PATH, although if there is demand
+for it a script for making that easily distributable as well will be
+supplied (probably through a `makedist` option).
+
+Some system directories (`/proc`, `/sys`, `/dev`, `/tmp`, and `/var/tmp`) are
+included as-is on top of the overlay so anything bound into those
+directories will not appear.  In addition, any `nfs` filesystem types
+are automatically added on top of the overlay because they don't work
+properly through overlay, so no bind mounts will appear in those paths
+either. A private copy of `/dev/shm` is mounted, so it can't be used as
+shared memory between the host and the application.
+
+`bindexec` always creates a new process namespace because that's the
+easiest way to make sure that the fuse-overlayfs process will exit when
+the command exits.  This means that processes start over at pid 1 and no
+process can be seen outside of the namespace.  Also because it is using
+an unprivileged user namespace, any files owned by anyone other than the
+current user will show up as being owned by `nobody` (just as it does in
+`cvmfsexec`).
