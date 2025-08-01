@@ -51,6 +51,7 @@ usage()
 
 SING=false
 MACHTYPE=""
+CVMFSVERSION=""
 while true; do
     if [ "$1" = "-s" ]; then
         SING=true
@@ -58,6 +59,9 @@ while true; do
     elif [ "$1" = "-m" ]; then
         MACHTYPE="$2"
         shift 2
+    elif [ "$1" = "-v" ]; then
+	CVMFSVERSION="$2"
+	shift 2
     else
         break
     fi
@@ -128,7 +132,6 @@ get_cvmfs_latest_version_from_pkg_list() {
     echo "$1"|sed -n 's/.*cvmfs-\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'|sort -t. -k 1,1n -k 2,2n -k 3,3n|tail -1
 }
 
-
 DISTRO="`distroname`"
 VERS="`distroversion`"
 ARCH="`distroarch`"
@@ -190,6 +193,7 @@ DIST="$HERE/dist"
 
 DISTTYPE=""
 INCLUDEHELPER=true
+
 case $1 in
     -o)
         if [ $# != 2 ]; then
@@ -337,7 +341,10 @@ else
     # but using the version number found from the base distribution
     DISTRO_YUM="`distroname_yum $DISTRO`"
     CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
-    CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+    echo "$CVMFSVERSION"
+    if [ -z "$CVMFSVERSION" ]; then
+       CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+    fi
     if [ -z "CVMFSVERSION" ]; then
       echo "WARN: Couldn't find package listing in $BASEURL, switching to backup.." >&2
       CVMFS_BASEURL="$CVMFS_BASE_URL_MIRROR2"
