@@ -45,6 +45,7 @@ usage()
     echo "   directory as the script."
     echo " The -s option makes both operations work for singcvmfs instead"
     echo "   of cvmfsexec, and files are left in .singcvmfs"
+    echo " The -v option allows you to select a CVMFS version. In the format X.Y.Z"
     ) >&2
     exit 2
 }
