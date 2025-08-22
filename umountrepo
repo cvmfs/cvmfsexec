@@ -62,7 +62,13 @@ if [ "`id -u`" == 0 ]; then
     ISROOT=true
 else
     ISROOT=false
+    # detect fusermount helper available on the system
+    FUSERMOUNT=$(command -pv fusermount)
+    if [ -z "$FUSERMOUNT" ]; then
+        FUSERMOUNT=$(command -pv fusermount3)
+    fi
 fi
+
 
 for REPO; do
     if $LAZY; then
@@ -70,14 +76,14 @@ for REPO; do
         if $ISROOT; then
             umount -l $REPO
         else
-            fusermount -uz $REPO
+            $FUSERMOUNT -uz $REPO
         fi
     else
         echo "Unmounting $REPO"
         if $ISROOT; then
             umount $REPO
         else
-            fusermount -u $REPO
+            $FUSERMOUNT -u $REPO
         fi
         rmdir $REPO
     fi

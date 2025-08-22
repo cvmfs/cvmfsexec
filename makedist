@@ -32,8 +32,8 @@ supportedtypes() {
 usage()
 {
     (
-    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default|none}"
-    echo "       makedist [-s] -o <self_extracting_script>"
+    echo "Usage: makedist [-s] [-3] [ -m machinetype ] {osg|egi|default|none}"
+    echo "       makedist [-s] [-3] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
     echo "   The default is the current machine.  Supported types:"
@@ -45,11 +45,13 @@ usage()
     echo "   directory as the script."
     echo " The -s option makes both operations work for singcvmfs instead"
     echo "   of cvmfsexec, and files are left in .singcvmfs"
+    echo " The -3 option forces use of fuse3 backend for all machine types."
     ) >&2
     exit 2
 }
 
 SING=false
+USEFUSE3=false
 MACHTYPE=""
 while true; do
     if [ "$1" = "-s" ]; then
@@ -58,6 +60,9 @@ while true; do
     elif [ "$1" = "-m" ]; then
         MACHTYPE="$2"
         shift 2
+    elif [ "$1" = "-3" ]; then
+        USEFUSE3=true
+        shift
     else
         break
     fi
@@ -421,49 +426,62 @@ if $INCLUDEHELPER; then
 fi
 
 FUSESUBDIR=false
-CVMFSFUSE3URL="$CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`"
+CVMFSFUSE3RPMNAME=`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`
+CVMFSFUSE3URL="$CVMFSURL/$CVMFSFUSE3RPMNAME"
+
 if $SING; then
+    USEFUSE3=true
+fi
+if [ "$EL" -ge 9 ]; then
+    USEFUSE3=true
+fi
+
+if [ "$DISTRO" = suse ]; then
+    if $USEFUSE3; then
+        # hack to check if package is available in current dir
+        if [ ! -f "$HERE/$CVMFSFUSE3RPMNAME" ]; then
+            echo "No cvmfs-fuse3 for SuSE available." >&2
+            echo "Please provide custom-built $CVMFSFUSE3RPMNAME in the $HERE directory to continue." >&2
+            exit 1
+        else
+            CVMFSFUSE3URL="file://$HERE/$CVMFSFUSE3RPMNAME"
+        fi
+    fi
+fi
+
+if $USEFUSE3; then
     URLS="$URLS $CVMFSFUSE3URL"
+    FUSELIB=fuse3-libs
+else
+    FUSELIB=fuse-libs
+fi
+if [ "$DISTRO" = suse ]; then
+    FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
+    if $USEFUSE3; then
+        FUSELIB=libfuse3
+    else
+        FUSELIB=libfuse2
+    fi
+else
     if [ "$EL" -lt 8 ]; then
-        FUSEURL="https://archives.fedoraproject.org/pub/archive/epel/$EL/$ARCH/Packages"
-        FUSESUBDIR=true
+        if $USEFUSE3; then
+            FUSEURL="https://archives.fedoraproject.org/pub/archive/epel/$EL/$ARCH/Packages"
+            FUSESUBDIR=true
+        else
+            FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages/"
+        fi
     elif [ "$EL" -eq 8 ]; then
         FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
     else
         FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
     fi
-    URL="`latesturl $FUSEURL fuse3-libs $FUSESUBDIR`"
-    if [ -z "$URL" ]; then
-        echo "No fuse3-libs package found from $FUSEURL" >&2
-        exit 1
-    fi
-    URLS="$URLS $URL"
-else
-    if [ "$DISTRO" = suse ]; then
-        FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
-        FUSELIB=libfuse2
-    else
-        if [ "$EL" -lt 8 ]; then
-            FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages/"
-        elif [ "$EL" -eq 8 ]; then
-            FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
-        else
-            FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
-        fi
-        if [ "$EL" -lt 9 ]; then
-            FUSELIB=fuse-libs
-        else
-            FUSELIB=fuse3-libs
-            URLS="$URLS $CVMFSFUSE3URL"
-        fi
-    fi
-    URL="`latesturl $FUSEURL $FUSELIB $FUSESUBDIR`"
-    if [ -z "$URL" ]; then
-        echo "No $FUSELIB package found from $FUSEURL" >&2
-        exit 1
-    fi
-    URLS="$URLS $URL"
 fi
+URL="`latesturl $FUSEURL $FUSELIB $FUSESUBDIR`"
+if [ -z "$URL" ]; then
+    echo "No $FUSELIB package found from $FUSEURL" >&2
+    exit 1
+fi
+URLS="$URLS $URL"
 
 if [ "$EL" -eq 7 ]; then
     # add fuse2fs only on EL7, it is standard elsewhere
