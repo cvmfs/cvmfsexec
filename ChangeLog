@@ -1,3 +1,9 @@
+cvmfsexec-4.48 - 11 September 2025
+- Remove support for el7 in the osg and egi distributions because it is broken;
+  the version of cvmfs in the last osg and egi distros that supported it does
+  not match what is available to download from CERN anymore.
+- Add support for debian 13
+
 cvmfsexec-4.47 - 19 May 2025
 - Remove setting X509_USER_PROXY because it is no longer used.
 

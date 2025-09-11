@@ -38,6 +38,8 @@ jobs:
             version: 11
           - distro: debian
             version: 12
+          - distro: debian
+            version: 13
           - distro: ubuntu
             version: 22.04
           - distro: ubuntu
