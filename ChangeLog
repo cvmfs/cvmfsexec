@@ -1,3 +1,7 @@
+- Add a bindexec command.
+- Stop using $TMPDIR as a temporary variable name in cvmfsexec because it
+  might be already set and exported.
+
 cvmfsexec-4.48 - 11 September 2025
 - Remove support for el7 in the osg and egi distributions because it is broken;
   the version of cvmfs in the last osg and egi distros that supported it does

@@ -1,0 +1,200 @@
+#!/bin/bash
+# Add bind mounts in a user namespace and change to that space.
+# Requires being able to run unshare -rm and the ability to do fuse mounts
+#   (kernel >= 4.18) and requires fuse-overlayfs.
+# Written by Dave Dykstra November 2024, based heavily on cvmfsexec.
+
+#set -x
+#PS4='c$$+ '
+
+VERSION=4.48
+
+usage()
+{
+    echo "Usage: bindexec [-v] [src:dest ...] -- [command]" >&2
+    echo "    Bind mount each src to dest in new user mount namespace and run command" >&2
+    echo "       -v:   print current version and exit" >&2
+    exit 1
+}
+
+# needed for pivot_root
+PATH=$PATH:/usr/sbin
+
+TMPD=/dev/shm/bindexec
+STARTFIFO=$TMPD/start
+WAITFIFO=$TMPD/wait
+
+# bash syntax {NAME}<&N doesn't work on older bashes such as the 
+# version 3.2.x on macOS Big Sur, and in fact it fails with an error
+# message but not an error code, so test for it first to be able to
+# gracefully die
+
+if [ -n "$({TESTX}<&0 2>&1)" ]; then
+    echo "Cannot assign file descriptors to variables, bash version too old" >&2
+    exit 1
+fi
+
+# make a copy of stdin fd, for sending to the final command
+exec {STDINCOPYFD}<&0
+
+ORIGPWD=$PWD
+
+# can't use OPTIND because it can't distinguish between -- there or missing
+NOPTS=0
+while getopts "v" OPTION; do
+    let NOPTS+=1
+    case $OPTION in
+        v)  echo "$VERSION"
+            exit
+            ;;
+        \?) usage
+            ;;
+    esac
+done
+shift $NOPTS
+
+BINDS=""
+for ARG; do
+    if [ "$ARG" == "--" ]; then
+        break
+    fi
+    if [[ "$ARG" != *:* ]]; then
+        echo "bindexec: $ARG does not contain a colon" >&2
+        usage
+    fi
+    if [[ "$ARG" != /* ]] || [[ "$ARG" != *:/* ]]; then
+        echo "bindexec: source or destination in $ARG do not start with \"/\"" >&2
+        usage
+    fi
+    BINDS="$BINDS $ARG"
+    shift
+done
+
+if [ "$ARG" != "--" ]; then
+    echo "bindexec: no double-hyphen found" >&2
+    usage
+fi
+shift
+
+ORIGUID="$(id -u)"
+ORIGGID="$(id -g)"
+
+UNSHAREOPTS="--propagation unchanged"
+
+# Note that within the HERE document, unprotected $ substitutions are
+#  done by the surrounding shell, and \$ is within the unshare shell
+unshare -rm -pf $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
+    #set -x
+    #PS4='c\$$+ '
+
+    # mount a private /dev/shm
+    mount -t tmpfs tmpfs /dev/shm
+    mkdir $TMPD
+
+    # now in the first "fake root" namespace
+    mount -t proc proc /proc
+    mkdir -p $TMPD/upper $TMPD/work $TMPD/overlay
+
+    # put the bind mounts into the upper dir
+    for BIND in $BINDS; do
+        SRC="\${BIND%:*}"
+        DST="\${BIND#*:}"
+        if [ -d "\$SRC" ]; then
+            mkdir -p $TMPD/upper\$DST
+        elif [ -f "\$SRC" ]; then
+            DSTDIR="\${DST%/*}"
+            if [ "\$DST" != "\$DSTDIR" ]; then
+                mkdir -p $TMPD/upper\$DSTDIR
+            fi
+            touch $TMPD/upper\$DST
+        else
+            echo "bindexec: \$SRC not found, skipping" >&2
+        fi
+        mount --rbind \$SRC $TMPD/upper\$DST
+    done
+
+    # Leave this bash running as PID 1, because most other
+    #  programs won't handle signals & child reaping correctly.
+    #  Note that all other processes in the namespaces will get
+    #  a SIGKILL when PID 1 exits.
+    trap "" 1 2 3 15  # ignore all ordinary signals
+
+    fuse-overlayfs -o allow_other,noacl,squash_to_root,lowerdir=/,upperdir=$TMPD/upper,workdir=$TMPD/work $TMPD/overlay 2> >(grep -v lazytime >&2)
+    # Put original system dirs on top of the overlay
+    mount -t proc proc $TMPD/overlay/proc
+    mount --rbind /sys $TMPD/overlay/sys
+    mount --rbind /dev $TMPD/overlay/dev
+
+    # Add cvmfs on top if it is present
+    if [ -d /cvmfs ]; then
+        mkdir -p $TMPD/overlay/cvmfs
+        mount --rbind /cvmfs $TMPD/overlay/cvmfs
+    fi
+
+    # Also bind on top nfs mounts because they don't work through fuse-overlayfs
+    mount|while read FROM X TO X TYPE REST; do
+        if [[ \$TYPE = nfs* ]]; then
+            mkdir -p $TMPD/overlay\$TO
+            # this sometimes fails with weird bind mount combinations 
+            # under apptainer so just save the output in a variable so
+            # it can be seen with debugging enabled
+            MSG="\$(mount --rbind \$TO $TMPD/overlay\$TO 2>&1)"
+        fi
+    done
+
+    # Also bind /tmp and /var/tmp so files created there go into the system
+    # directories instead of into a ram disk
+    for D in /tmp /var/tmp; do
+        mount --rbind \$D $TMPD/overlay\$D
+    done
+
+    # Start a second fake root namespace so we don't interfere with the
+    #  fuse-overlayfs mount space when we do the pivot_root.
+    # Quoting the HERE document's delimeter makes this nested shell not
+    #  interpret $ substitutions, but the previous one still does so
+    #  need to use \$ when don't want first shell to expand.
+    unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "\${@:-$SHELL}" <<'!EOF-2!'
+        #set -x
+        #PS4='c\$$+ '
+
+        mkfifo $STARTFIFO $WAITFIFO
+
+        ( 
+        # This is a background process for setting up the child's uid map
+        trap "" 1 2 3 15  # ignore ordinary signals
+        read PID
+        # set up uid/gid map
+        echo "$ORIGGID 0 1" >/proc/"\$PID"/gid_map
+        echo "$ORIGUID 0 1" >/proc/"\$PID"/uid_map
+        echo "ready" >$WAITFIFO
+        ) <$STARTFIFO &
+        
+        # Change to the new root.  Would use chroot but it doesn't work.
+        mount --rbind $TMPD/overlay $TMPD/overlay # pivot_root requires this
+        cd $TMPD/overlay
+        mkdir -p .old-root
+        pivot_root . .old-root
+        umount -l .old-root 2>/dev/null
+        rmdir .old-root
+        cd /
+
+        # Finally, start the user namespace with the original uid/gid
+        # This HERE document is also quoted and so the shell does not expand
+        exec unshare -U $UNSHAREOPTS /bin/bash /dev/stdin "\${@:-$SHELL}" <<'!EOF-3!'
+            #set -x
+            #PS4='c\$$+ '
+
+            # now in the user namespace
+
+            cd $ORIGPWD
+
+            echo "\$$" >$STARTFIFO
+            # wait for the uid/gid maps to be set up
+            read X <$WAITFIFO
+
+            exec "\$@" <&$STDINCOPYFD $STDINCOPYFD<&-
+!EOF-3!
+
+!EOF-2!
+
+!EOF-1!

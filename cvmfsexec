@@ -39,13 +39,13 @@ elif [ "$MAJORKERN" -eq 3 -a "$MINORKERN" -eq 10 -a "$REVKERN" -ge 1127 ]; then
     USERFUSE=true
 fi
 
-TMPDIR=$(mktemp -d)
-trap "rm -rf $TMPDIR" 0  # note that trap does not carry past exec
-CMDFIFO1=$TMPDIR/cmd1
-WAITFIFO1=$TMPDIR/wait1
-CMDFIFO2=$TMPDIR/cmd2
-WAITFIFO2=$TMPDIR/wait2
-FUNCS=$TMPDIR/funcs
+TMPD=$(mktemp -d)
+trap "rm -rf $TMPD" 0  # note that trap does not carry past exec
+CMDFIFO1=$TMPD/cmd1
+WAITFIFO1=$TMPD/wait1
+CMDFIFO2=$TMPD/cmd2
+WAITFIFO2=$TMPD/wait2
+FUNCS=$TMPD/funcs
 
 # create the fifos used for interprocess communication
 mkfifo $CMDFIFO1 $WAITFIFO1 $CMDFIFO2 $WAITFIFO2
@@ -235,7 +235,7 @@ else
         fi
         ./umountrepo $REPO >/dev/null
     done
-    rm -rf $TMPDIR
+    rm -rf $TMPD
     ) &
 fi
 
@@ -249,7 +249,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
     #set -x
     #PS4='c\$$+ '
     # now in the "fakeroot" namespace
-    trap "rm -rf $TMPDIR" 0 # note that this does not carry through "exec"
+    trap "rm -rf $TMPD" 0 # note that this does not carry through "exec"
 
     mkdir -p $HERE/mnt
     mount --rbind $HERE/mnt $HERE/mnt # pivot_root requires this mountpoint
@@ -408,7 +408,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
             #  processes in the namespaces will get a SIGKILL when
             #  PID 1 exits.
             EXEC=""
-            trap "rm -rf $TMPDIR" 0
+            trap "rm -rf $TMPD" 0
             trap "" 1 2 3 15  # ignore all ordinary signals
         else
             EXEC=exec
