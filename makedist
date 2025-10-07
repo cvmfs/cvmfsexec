@@ -34,6 +34,7 @@ usage()
     (
     echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default|none}"
     echo "       makedist [-s] -o <self_extracting_script>"
+    echo "       makedist [-v] X.Y.Z"
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
     echo "   The default is the current machine.  Supported types:"
@@ -332,7 +333,6 @@ else
     # but using the version number found from the base distribution
     DISTRO_YUM="`distroname_yum $DISTRO`"
     CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
-    echo "$CVMFSVERSION"
     if [ -z "$CVMFSVERSION" ]; then
        CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
     fi
