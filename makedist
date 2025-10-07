@@ -32,7 +32,7 @@ supportedtypes() {
 usage()
 {
     (
-    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default|none}"
+    echo "Usage: makedist [-s] [-m machinetype] [-v X.Y.Z] {osg|egi|default|none}"
     echo "       makedist [-s] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
@@ -45,12 +45,14 @@ usage()
     echo "   directory as the script."
     echo " The -s option makes both operations work for singcvmfs instead"
     echo "   of cvmfsexec, and files are left in .singcvmfs"
+    echo " The -v option allows you to select a CVMFS version. In the format X.Y.Z"
     ) >&2
     exit 2
 }
 
 SING=false
 MACHTYPE=""
+CVMFSVERSION=""
 while true; do
     if [ "$1" = "-s" ]; then
         SING=true
@@ -58,6 +60,9 @@ while true; do
     elif [ "$1" = "-m" ]; then
         MACHTYPE="$2"
         shift 2
+    elif [ "$1" = "-v" ]; then
+	CVMFSVERSION="$2"
+	shift 2
     else
         break
     fi
@@ -128,7 +133,6 @@ get_cvmfs_latest_version_from_pkg_list() {
     echo "$1"|sed -n 's/.*cvmfs-\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'|sort -t. -k 1,1n -k 2,2n -k 3,3n|tail -1
 }
 
-
 DISTRO="`distroname`"
 VERS="`distroversion`"
 ARCH="`distroarch`"
@@ -141,8 +145,8 @@ if [ -z "$MACHTYPE" ]; then
         fi
         case "$VERS" in
             11) DISTRO=rhel; VERS=8;;
-            12) DISTRO=rhel; VERS=9;;
-            *)  echo "debian$VERS not supported, only 11 & 12 are" >&2
+            12|13) DISTRO=rhel; VERS=9;;
+            *)  echo "debian$VERS not supported, only 11 through 13 are" >&2
                 exit 2;;
         esac
     elif [ "$DISTRO" = "ubuntu" ]; then
@@ -190,6 +194,7 @@ DIST="$HERE/dist"
 
 DISTTYPE=""
 INCLUDEHELPER=true
+
 case $1 in
     -o)
         if [ $# != 2 ]; then
@@ -241,24 +246,19 @@ case $1 in
         ;;
     osg)
         if [ $EL -lt 8 ]; then
-            REL=3.6
-            EXT=""
-        else
-            REL=24-main
-            EXT="/Packages/c"
+            echo "ERROR: unsupported OS for osg! Only rhel8 and up supported" >&2
+            exit 1
         fi
-        REPO=release
-        BASEURL="https://repo.opensciencegrid.org/osg/$REL/el$EL/$REPO/x86_64$EXT"
+        BASEURL="https://repo.opensciencegrid.org/osg/24-main/el$EL/release/x86_64/Packages/c"
         BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     egi)
-        OS=centos$EL
-        if [ $EL -gt 8 ]; then
+        if [ $EL = 9 ] || ( [ $DISTRO = suse ] && [ $EL = 8 ] ); then
+             # In the suse case we don't actually get much from the egi
+             # distribution so the version mismatch is ok
              BASEURL="https://repository.egi.eu/sw/production/umd/5/al9/release/x86_64/"
-        elif [ $EL -eq 7 ]; then
-            BASEURL="https://repository.egi.eu/sw/production/umd/4/centos7/x86_64/updates"
         else
-          echo "ERROR: unsupported OS for egi! only centos7, almalinux9 supported." >&2
-          exit 1
+            echo "ERROR: unsupported OS for egi! Only rhel9 is supported" >&2
+            exit 1
         fi 
         BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     default|none)
@@ -309,11 +309,6 @@ if [ "$ARCH" != "x86_64" ]; then
     #  we're looking at x86_64 version repositories for the config rpm
     INCLUDEHELPER=false
 fi
-if [ "$DISTTYPE" = egi ] && [ "$EL" = 8 ]; then
-    echo "egi's UMD does not yet support rhel8" 2>&1
-    exit 1
-fi
-
 
 URLS=""
 CVMFSURL=""
@@ -337,7 +332,9 @@ else
     # but using the version number found from the base distribution
     DISTRO_YUM="`distroname_yum $DISTRO`"
     CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
-    CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+    if [ -z "$CVMFSVERSION" ]; then
+       CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+    fi
     if [ -z "CVMFSVERSION" ]; then
       echo "WARN: Couldn't find package listing in $BASEURL, switching to backup.." >&2
       CVMFS_BASEURL="$CVMFS_BASE_URL_MIRROR2"
