@@ -32,7 +32,7 @@ supportedtypes() {
 usage()
 {
     (
-    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default|none}"
+    echo "Usage: makedist [-s] [-m machinetype] {osg|egi|default|none}"
     echo "       makedist [-s] -o <self_extracting_script>"
     echo "       makedist [-v X.Y.Z]" 
     echo " The first usage creates a distribution in 'dist' directory."
