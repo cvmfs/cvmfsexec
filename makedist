@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64 suse15-aarch64"
 REQUIREDCMDS="curl rpm2cpio cpio"
 
 CURLOPTS="--connect-timeout 5 -Y 125000 -y 10 -LsS"
