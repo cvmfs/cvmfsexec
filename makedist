@@ -440,7 +440,7 @@ if $SING; then
     URLS="$URLS $URL"
 else
     if [ "$DISTRO" = suse ]; then
-        FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
+        FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/$ARCH"
         FUSELIB=libfuse2
     else
         if [ "$EL" -lt 8 ]; then
