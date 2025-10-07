@@ -32,7 +32,7 @@ supportedtypes() {
 usage()
 {
     (
-    echo "Usage: makedist [-s] [ -m machinetype ] {osg|egi|default|none}"
+    echo "Usage: makedist [-s] [-m machinetype] [-v X.Y.Z] {osg|egi|default|none}"
     echo "       makedist [-s] -o <self_extracting_script>"
     echo " The first usage creates a distribution in 'dist' directory."
     echo "   The -m option selects machinetype for the distribution."
@@ -45,12 +45,14 @@ usage()
     echo "   directory as the script."
     echo " The -s option makes both operations work for singcvmfs instead"
     echo "   of cvmfsexec, and files are left in .singcvmfs"
+    echo " The -v option allows you to select a CVMFS version. In the format X.Y.Z"
     ) >&2
     exit 2
 }
 
 SING=false
 MACHTYPE=""
+CVMFSVERSION=""
 while true; do
     if [ "$1" = "-s" ]; then
         SING=true
@@ -58,6 +60,9 @@ while true; do
     elif [ "$1" = "-m" ]; then
         MACHTYPE="$2"
         shift 2
+    elif [ "$1" = "-v" ]; then
+	CVMFSVERSION="$2"
+	shift 2
     else
         break
     fi
@@ -128,7 +133,6 @@ get_cvmfs_latest_version_from_pkg_list() {
     echo "$1"|sed -n 's/.*cvmfs-\([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'|sort -t. -k 1,1n -k 2,2n -k 3,3n|tail -1
 }
 
-
 DISTRO="`distroname`"
 VERS="`distroversion`"
 ARCH="`distroarch`"
@@ -190,6 +194,7 @@ DIST="$HERE/dist"
 
 DISTTYPE=""
 INCLUDEHELPER=true
+
 case $1 in
     -o)
         if [ $# != 2 ]; then
@@ -327,7 +332,9 @@ else
     # but using the version number found from the base distribution
     DISTRO_YUM="`distroname_yum $DISTRO`"
     CVMFSURL="$CVMFS_BASEURL/yum/cvmfs/$DISTRO_YUM/$VERS/$ARCH"
-    CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+    if [ -z "$CVMFSVERSION" ]; then
+       CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+    fi
     if [ -z "CVMFSVERSION" ]; then
       echo "WARN: Couldn't find package listing in $BASEURL, switching to backup.." >&2
       CVMFS_BASEURL="$CVMFS_BASE_URL_MIRROR2"
