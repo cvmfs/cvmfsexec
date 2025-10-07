@@ -17,8 +17,12 @@ else
     CACHEPAT="/var/lib/cvmfs.*fuse"
 fi
 for DIST in default osg egi; do
-    if [ "$DIST" = egi ] && [[ "$VERSION_ID" != 7* ]]; then
-        # egi not yet supported for el8 or el9
+    if [ "$DIST" = egi ] && ( [[ "$VERSION_ID" = 7* ]] || [[ "$VERSION_ID" = 8* ]] || [ "$VERSION_ID" = 11 ] ); then
+        # egi only supported on el9 and debian 12+
+        continue
+    fi
+    if [ "$DIST" = osg ] && [[ "$VERSION_ID" = 7* ]]; then
+        # osg not supported anymore for el7
         continue
     fi
     rm -rf dist /tmp/cvmfsexec
@@ -68,12 +72,16 @@ for DIST in default osg egi; do
         "ls /cvmfs/atlas.cern.ch/repo && mount|grep $CACHEPAT"
     if [[ "$VERSION_ID" == 8* ]] || [[ "$VERSION_ID" == 9* ]]; then
         : try to at least make other supported architecture distributions
+        EL=${VERSION_ID%.*}
+        if [ "$DIST" = egi ] && [ "$EL" = 8 ]; then
+            continue
+        fi
         for arch in aarch64 ppc64le; do
             rm -rf dist /tmp/cvmfsexec
-            ./makedist -m rhel8-$arch $DIST
+            ./makedist -m rhel$EL-$arch $DIST
             ./makedist -o /tmp/cvmfsexec
             rm -rf dist /tmp/cvmfsexec
-            ./makedist -s -m rhel8-$arch $DIST
+            ./makedist -s -m rhel$EL-$arch $DIST
             ./makedist -s -o /tmp/cvmfsexec
         done
     fi

@@ -9,7 +9,7 @@ if [ -f /usr/bin/zypper ]; then
 elif [ -f /usr/bin/apt ]; then
     # debian or ubuntu
     apt-get update
-    apt-get install -y procps curl rpm2cpio cpio fuse3 fuse2fs
+    apt-get install -y procps curl rpm2cpio cpio fuse3 e2fsprogs fuse2fs 
 else
     # rhel
     yum install -y procps-ng cpio findutils fuse fuse3 e2fsprogs
