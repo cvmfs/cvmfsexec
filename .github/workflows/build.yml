@@ -33,7 +33,7 @@ jobs:
           - distro: rockylinux
             version: 9
           - distro: opensuse/leap
-            version: 15
+            version: 15.5
           - distro: debian
             version: 11
           - distro: debian
