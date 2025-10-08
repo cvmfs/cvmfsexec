@@ -32,20 +32,19 @@ supportedtypes() {
 usage()
 {
     (
-    echo "Usage: makedist [-s] [-m machinetype] [-v X.Y.Z] {osg|egi|default|none}"
+    echo "Usage: makedist [-s] [-v X.Y.Z] [-m machinetype] {osg|egi|default|none}"
     echo "       makedist [-s] -o <self_extracting_script>"
-    echo " The first usage creates a distribution in 'dist' directory."
+    echo " The -s option makes both usages work for singcvmfs instead of cvmfsexec."
+    echo " The first usage creates a distribution in a 'dist' subdirectory."
+    echo "   The -v option selects a specific CVMFS version instead of the latest."
     echo "   The -m option selects machinetype for the distribution."
     echo "   The default is the current machine.  Supported types:"
     supportedtypes "     "
-    echo " Debian and Ubuntu hosts get translated to corresponding rhel types."
+    echo "   Debian and Ubuntu hosts get translated to corresponding rhel types."
     echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
     echo "   given file name that self extracts and executes cvmfsexec."
     echo "   After extraction, files are left behind under '.cvmfsexec' in the same"
-    echo "   directory as the script."
-    echo " The -s option makes both operations work for singcvmfs instead"
-    echo "   of cvmfsexec, and files are left in .singcvmfs"
-    echo " The -v option allows you to select a CVMFS version. In the format X.Y.Z"
+    echo "   directory as the script, or in '.singcvmfs' with -s."
     ) >&2
     exit 2
 }
@@ -384,7 +383,7 @@ latesturl()
         URL="${URL%/}"
         URL="$URL/${2:0:1}"
     fi
-    typeset PKG="$(curl $CURLOPTS "$URL"|grep ${2}-[0-9].*$ARCH|grep -v 32bit|grep -v mirrorlist|tail -1|sed 's/.*href="//;s/".*//')"
+    typeset PKG="$(curl $CURLOPTS "$URL"|grep ${2}-[0-9].*$ARCH|grep -v 32bit|grep -v mirrorlist|grep href|tail -1|sed 's/.*href="//;s/".*//')"
     if [ -n "$PKG" ]; then
         LATESTRETRY=0
         echo "$URL/$PKG"
