@@ -438,7 +438,7 @@ if $SING; then
 else
     if [ "$DISTRO" = suse ]; then
         FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/$ARCH"
-        FUSELIB=libfuse2
+        FUSELIB=libfuse3
     else
         if [ "$EL" -lt 8 ]; then
             FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages/"
