@@ -1,3 +1,9 @@
+cvmfsexec-4.49 - 8 October 2025
+- Change makedist to only look at href lines when looking for packages in
+  package listings.  This fixes downloads from almalinux which now are
+  including a 'span class="name"' line matching the package name.
+- Add a "-v" option to makedist to select a specific cvmfs version.
+
 cvmfsexec-4.48 - 11 September 2025
 - Remove support for el7 in the osg and egi distributions because it is broken;
   the version of cvmfs in the last osg and egi distros that supported it does
