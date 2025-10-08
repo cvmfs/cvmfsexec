@@ -51,3 +51,21 @@ jobs:
 
       - name: Run make-and-test under docker
         run: ./ci/docker-run ${{ matrix.distro }}:${{ matrix.version }}
+
+  makeandtest-arm:
+    name: ${{ matrix.distro }}:${{ matrix.version }}-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: rockylinux
+            version: 8
+          - distro: rockylinux
+            version: 9
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Get source code
+        uses: actions/checkout@v3
+
+      - name: Run make-and-test under docker
+        run: ./ci/docker-run ${{ matrix.distro }}:${{ matrix.version }}
