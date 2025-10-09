@@ -1,3 +1,9 @@
+cvmfsexec-4.50 - 9 October 2025
+- Add support for suse15-aarch64 machine type in makedist.
+- On suse15 machine types with the egi configuration, change makedist to
+  use the current released cvmfs version instead of the current version
+  in the EGI UMD.
+
 cvmfsexec-4.49 - 8 October 2025
 - Change makedist to only look at href lines when looking for packages in
   package listings.  This fixes downloads from almalinux which now are

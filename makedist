@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64 suse15-aarch64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-ppc64le rhel8-x86_64 rhel9-aarch64 rhel9-ppc64le rhel9-x86_64 suse15-aarch64 suse15-x86_64"
 REQUIREDCMDS="curl rpm2cpio cpio"
 
 CURLOPTS="--connect-timeout 5 -Y 125000 -y 10 -LsS"
@@ -38,7 +38,7 @@ usage()
     echo " The first usage creates a distribution in a 'dist' subdirectory."
     echo "   The -v option selects a specific CVMFS version instead of the latest."
     echo "   The -m option selects machinetype for the distribution."
-    echo "   The default is the current machine.  Supported types:"
+    echo "   The default is the current machine.  Supported types are:"
     supportedtypes "     "
     echo "   Debian and Ubuntu hosts get translated to corresponding rhel types."
     echo " The second usage puts 'dist' and cvmfsexec tools into one script with the"
