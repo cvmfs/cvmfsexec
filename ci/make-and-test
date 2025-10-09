@@ -5,8 +5,8 @@
 . /etc/os-release
 
 set -ex
-if [[ "$VERSION_ID" = 7* ]]; then
-    # installing yum-utils for yumdownloader to get fuse2fs fails, skip it
+if [ ! -f /usr/bin/fuse2fs ] && [ ! -f /usr/sbin/fuse2fs ]; then
+    # skip fuse2fs tests
     CACHEPAT="/var/lib/cvmfs"
 else
     truncate -s 6G scratch.img
