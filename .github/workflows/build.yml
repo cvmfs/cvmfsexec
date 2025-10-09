@@ -62,6 +62,8 @@ jobs:
             version: 8
           - distro: rockylinux
             version: 9
+          - distro: opensuse/leap
+            version: 15.5
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Get source code

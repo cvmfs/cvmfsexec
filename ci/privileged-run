@@ -5,7 +5,10 @@
 set -ex
 if [ -f /usr/bin/zypper ]; then
     # suse
-    zypper install -y tar gzip procps openssl-1_1 fuse fuse3 e2fsprogs fuse2fs
+    zypper install -y tar gzip procps openssl-1_1 fuse fuse3 e2fsprogs
+    if [[ $DOCKER_HUB_URI != *:15.5 ]]; then
+        zypper install -y fuse2fs
+    fi
 elif [ -f /usr/bin/apt ]; then
     # debian or ubuntu
     apt-get update
@@ -13,7 +16,7 @@ elif [ -f /usr/bin/apt ]; then
 else
     # rhel
     yum install -y procps-ng cpio findutils fuse fuse3 e2fsprogs
-    if [[ $DOCKER_HUB_URI == *:8 ]] || [[ $DOCKER_HUB_URI == *:9 ]]; then
+    if [[ $DOCKER_HUB_URI != *7* ]]; then
         yum install -y yum-utils
     fi
 fi

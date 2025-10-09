@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-x86_64 rhel8-ppc64le rhel9-aarch64 rhel9-x86_64 rhel9-ppc64le suse15-x86_64 suse15-aarch64"
 REQUIREDCMDS="curl rpm2cpio cpio"
 
 CURLOPTS="--connect-timeout 5 -Y 125000 -y 10 -LsS"
@@ -251,14 +251,19 @@ case $1 in
         BASEURL="https://repo.opensciencegrid.org/osg/24-main/el$EL/release/x86_64/Packages/c"
         BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     egi)
-        if [ $EL = 9 ] || ( [ $DISTRO = suse ] && [ $EL = 8 ] ); then
-             # In the suse case we don't actually get much from the egi
-             # distribution so the version mismatch is ok
-             BASEURL="https://repository.egi.eu/sw/production/umd/5/al9/release/x86_64/"
+        if [ $DISTRO = suse ] && [ -z "$CVMFSVERSION" ]; then
+            # Use the default version for suse, not egi's version which is
+            # too old
+            BASEURL="https://cvmrepo.s3.cern.ch/cvmrepo/yum/cvmfs/EL/$EL/x86_64"
+            BASELIST="$(get_cvmfs_pkg_list ${BASEURL/cvmrepo.s3/cvmrepo.s3-website})"
+            CVMFSVERSION="$(get_cvmfs_latest_version_from_pkg_list "$BASELIST")"
+        fi
+        if [ $EL = 9 ] || [ $DISTRO = suse ]; then 
+            BASEURL="https://repository.egi.eu/sw/production/umd/5/al9/release/x86_64/"
         else
             echo "ERROR: unsupported OS for egi! Only rhel9 is supported" >&2
             exit 1
-        fi 
+        fi
         BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     default|none)
         INCLUDEHELPER=false
@@ -436,8 +441,9 @@ if $SING; then
     URLS="$URLS $URL"
 else
     if [ "$DISTRO" = suse ]; then
-        FUSEURL="https://download.opensuse.org/distribution/openSUSE-stable/repo/oss/x86_64"
-        FUSELIB=libfuse2
+        FUSEURL="https://download.opensuse.org/distribution/leap/15.5/repo/oss/$ARCH"
+        FUSELIB=libfuse3
+        URLS="$URLS $CVMFSFUSE3URL"
     else
         if [ "$EL" -lt 8 ]; then
             FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages/"
