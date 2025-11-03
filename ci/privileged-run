@@ -19,6 +19,9 @@ else
     if [[ $DOCKER_HUB_URI != *7* ]]; then
         yum install -y yum-utils
     fi
+    if [[ $DOCKER_HUB_URI = *10 ]]; then
+        yum install -y util-linux
+    fi
 fi
 
 # because host kernel is Ubuntu 24+, this enables user namespaces
