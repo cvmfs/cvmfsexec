@@ -32,6 +32,8 @@ jobs:
             version: 8
           - distro: rockylinux
             version: 9
+          - distro: almalinux
+            version: 10
           - distro: opensuse/leap
             version: 15
           - distro: debian

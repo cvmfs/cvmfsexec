@@ -5,7 +5,7 @@
 # Written by Dave Dykstra 17 April 2019
 #
 
-SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-ppc64le rhel8-x86_64 rhel9-aarch64 rhel9-ppc64le rhel9-x86_64 suse15-aarch64 suse15-x86_64"
+SUPPORTEDTYPES="rhel7-x86_64 rhel8-aarch64 rhel8-ppc64le rhel8-x86_64 rhel9-aarch64 rhel9-ppc64le rhel9-x86_64 rhel10-x86_64 suse15-aarch64 suse15-x86_64"
 REQUIREDCMDS="curl rpm2cpio cpio"
 
 CURLOPTS="--connect-timeout 5 -Y 125000 -y 10 -LsS"
@@ -209,22 +209,14 @@ case $1 in
             SEDOPTS="-e s/cvmfsexec/$BASENAME/"
             REQUIRES="makedist -s"
         fi
-        # For now (as of 6-21-23), only require $DIST/.cvmfsexecdist for -s
-        # mode, so those not using -s don't have to re-make their distribution.
-        # Eventually this can be changed to always require that file instead
-        # of $DISTLIB.
-        HASSING=false
-        if [ -f $DIST/.cvmfsexecdist ]; then
-            read X DISTTYPE Y <$DIST/.cvmfsexecdist
-            if [ "$DISTTYPE" = "sing" ]; then
-                HASSING=true
-            fi
-        fi
-        DISTLIB=libcvmfs_fuse.so
-        if ([ ! -f $DIST/usr/lib*/$DISTLIB ] && [ ! -f $DIST/lib*/$DISTLIB ]) \
-                || [ $SING != $HASSING ]; then
+        if [ ! -f $DIST/.cvmfsexecdist ]; then
             echo "Must be run from where cvmfs distribution was made by $REQUIRES" >&2
             exit 1
+        fi
+        HASSING=false
+        read X DISTTYPE Y <$DIST/.cvmfsexecdist
+        if [ "$DISTTYPE" = "sing" ]; then
+            HASSING=true
         fi
         sed -e 's/^[ \t]*//' $SEDOPTS >$2 <<'!EOF!'
         #!/bin/bash
@@ -248,7 +240,7 @@ case $1 in
             echo "ERROR: unsupported OS for osg! Only rhel8 and up supported" >&2
             exit 1
         fi
-        BASEURL="https://repo.opensciencegrid.org/osg/24-main/el$EL/release/x86_64/Packages/c"
+        BASEURL="https://repo.opensciencegrid.org/osg/25-main/el$EL/release/x86_64/Packages/c"
         BASELIST="$(get_cvmfs_pkg_list $BASEURL)";;
     egi)
         if [ $DISTRO = suse ] && [ -z "$CVMFSVERSION" ]; then
@@ -423,49 +415,36 @@ fi
 
 FUSESUBDIR=false
 CVMFSFUSE3URL="$CVMFSURL/`echo $CVMFSRPMNAME|sed 's/cvmfs-/cvmfs-fuse3-/'`"
-if $SING; then
+if [ "$DISTRO" = suse ]; then
+    FUSEURL="https://download.opensuse.org/distribution/leap/15.5/repo/oss/$ARCH"
+    FUSELIB=libfuse3
     URLS="$URLS $CVMFSFUSE3URL"
-    if [ "$EL" -lt 8 ]; then
-        FUSEURL="https://archives.fedoraproject.org/pub/archive/epel/$EL/$ARCH/Packages"
-        FUSESUBDIR=true
-    elif [ "$EL" -eq 8 ]; then
-        FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
-    else
-        FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
-    fi
-    URL="`latesturl $FUSEURL fuse3-libs $FUSESUBDIR`"
-    if [ -z "$URL" ]; then
-        echo "No fuse3-libs package found from $FUSEURL" >&2
-        exit 1
-    fi
-    URLS="$URLS $URL"
 else
-    if [ "$DISTRO" = suse ]; then
-        FUSEURL="https://download.opensuse.org/distribution/leap/15.5/repo/oss/$ARCH"
-        FUSELIB=libfuse3
+    if [ "$EL" -ge 9 ] || [ "$MINORVERSION" -ge 13 ] || $SING; then
+        FUSELIB=fuse3-libs
         URLS="$URLS $CVMFSFUSE3URL"
     else
-        if [ "$EL" -lt 8 ]; then
-            FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages/"
-        elif [ "$EL" -eq 8 ]; then
-            FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
-        else
-            FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
-        fi
-        if [ "$EL" -lt 9 ]; then
-            FUSELIB=fuse-libs
-        else
-            FUSELIB=fuse3-libs
-            URLS="$URLS $CVMFSFUSE3URL"
-        fi
+        FUSELIB=fuse-libs
     fi
-    URL="`latesturl $FUSEURL $FUSELIB $FUSESUBDIR`"
-    if [ -z "$URL" ]; then
-        echo "No $FUSELIB package found from $FUSEURL" >&2
-        exit 1
+    if [ "$EL" -lt 8 ]; then
+        if [ "$FUSELIB" = "fuse-libs" ]; then
+            FUSEURL="https://vault.centos.org/centos/$EL/os/$ARCH/Packages"
+        else
+            FUSEURL="https://archives.fedoraproject.org/pub/archive/epel/$EL/$ARCH/Packages"
+            FUSESUBDIR=true
+        fi
+    elif [ "$EL" -eq 9 ]; then
+        FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
+    else
+        FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
     fi
-    URLS="$URLS $URL"
 fi
+URL="`latesturl $FUSEURL $FUSELIB $FUSESUBDIR`"
+if [ -z "$URL" ]; then
+    echo "No $FUSELIB package found from $FUSEURL" >&2
+    exit 1
+fi
+URLS="$URLS $URL"
 
 if [ "$EL" -eq 7 ]; then
     # add fuse2fs only on EL7, it is standard elsewhere

@@ -1,3 +1,7 @@
+cvmfsexec-4.51 - 3 November 2025
+- Add support for rhel10-x86_64 machine type in makedist with default and
+  osg distributions.
+
 cvmfsexec-4.50 - 9 October 2025
 - Add support for suse15-aarch64 machine type in makedist.
 - On suse15 machine types with the egi configuration, change makedist to
