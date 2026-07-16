@@ -1,3 +1,7 @@
+cvmfsexec-4.52 - 16 July 2026
+- Don't preserve modification timestamps when extracting a self-contained
+  distribution.
+
 cvmfsexec-4.51 - 3 November 2025
 - Add support for rhel10-x86_64 machine type in makedist with default and
   osg distributions.
