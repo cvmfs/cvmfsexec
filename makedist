@@ -226,7 +226,7 @@ case $1 in
             rm -rf $BASE
             mkdir $BASE
             TAR_START="`awk '/^__TAR_BELOW__/ {print NR + 1; exit 0; }' $0`"
-            tail -n+$TAR_START $0 | tar -xzf - -C $BASE
+            tail -n+$TAR_START $0 | tar -xzmf - -C $BASE
         fi
         exec $BASE/cvmfsexec "$@"
         __TAR_BELOW__
