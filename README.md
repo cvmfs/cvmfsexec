@@ -227,7 +227,13 @@ configuration requires "config-osg.opensciencegrid.org" to be mounted
 first, and the egi configuration requires "config-egi.egi.eu".
 
 If you are using a container system, bind mount $PWD/dist/cvmfs into the
-container as /cvmfs.
+container as /cvmfs.  If you don't have one handy, consider
+the [`bubblewrap`](https://github.com/containers/bubblewrap) package 
+which is a very lightweight container system that can do bind mounts
+with a user namespace.  For example with that try:
+```
+bwrap --dev-bind / / --bind $PWD/dist/cvmfs /cvmfs bash
+```
 
 To unmount all repositories, use `umountrepo -a`, or to unmount an
 individual repository use `umountrepo repository.name`.  Make sure that
