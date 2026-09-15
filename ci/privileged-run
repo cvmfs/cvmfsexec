@@ -5,10 +5,7 @@
 set -ex
 if [ -f /usr/bin/zypper ]; then
     # suse
-    zypper install -y tar gzip procps openssl-1_1 fuse fuse3 e2fsprogs
-    if [[ $DOCKER_HUB_URI != *:15.5 ]]; then
-        zypper install -y fuse2fs
-    fi
+    zypper install -y tar gzip cpio findutils fuse fuse3 e2fsprogs
 elif [ -f /usr/bin/apt ]; then
     # debian or ubuntu
     apt-get update

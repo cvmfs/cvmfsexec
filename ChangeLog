@@ -1,3 +1,8 @@
+cvmfsexec-4.53 - 15 September 2026
+- Switch from suse15 to suse16 supported machine types, because opensuse
+  leap 15 is End of Life.
+- Remove debian11 from tested distros, since it is also End of Life.
+
 cvmfsexec-4.52 - 16 July 2026
 - Don't preserve modification timestamps when extracting a self-contained
   distribution.

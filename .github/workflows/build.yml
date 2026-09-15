@@ -35,9 +35,7 @@ jobs:
           - distro: almalinux
             version: 10
           - distro: opensuse/leap
-            version: 15
-          - distro: debian
-            version: 11
+            version: 16
           - distro: debian
             version: 12
           - distro: debian
@@ -65,7 +63,7 @@ jobs:
           - distro: rockylinux
             version: 9
           - distro: opensuse/leap
-            version: 15.5
+            version: 16
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Get source code
