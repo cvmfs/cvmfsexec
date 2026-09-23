@@ -1,3 +1,8 @@
+cvmfsexec-4.54 - 23 September 2026
+- Change the "readlink -f" in the underlay implementation to just
+  "readlink" to avoid problems with symlinks that point to something
+  in a non-existent directory.
+
 cvmfsexec-4.53 - 15 September 2026
 - Switch from suse15 to suse16 supported machine types, because opensuse
   leap 15 is End of Life.
