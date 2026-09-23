@@ -9,7 +9,7 @@
 #set -x
 #PS4='c$$+ '
 
-VERSION=4.53
+VERSION=4.54
 
 usage()
 {
@@ -262,7 +262,7 @@ unshare -rm $UNSHAREOPTS /bin/bash /dev/stdin "${@:-$SHELL}" <<!EOF-1!
         fi
         TARG=$HERE/mnt/\$ROOTFILE
         if [ -L \$ROOTFILE ]; then
-            ln -s \$(readlink -f \$ROOTFILE) \$TARG
+            ln -s \$(readlink \$ROOTFILE) \$TARG
         elif [ -d \$ROOTFILE ]; then
             mkdir -p \$TARG
             mount --rbind \$ROOTFILE \$TARG
