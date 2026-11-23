@@ -443,9 +443,7 @@ else
             FUSESUBDIR=true
         fi
     elif [ "$EL" -eq 9 ]; then
-        FUSEURL="https://repo.almalinux.org/almalinux/$EL/AppStream/$ARCH/os/Packages"
-    else
-        FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"
+        FUSEURL="https://repo.almalinux.org/almalinux/$EL/BaseOS/$ARCH/os/Packages"  # NOTE: AppStream does not provide fuse3-libs (anymore?)
     fi
 fi
 URL="`latesturl $FUSEURL $FUSELIB $FUSESUBDIR`"
